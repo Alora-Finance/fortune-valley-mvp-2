@@ -28,10 +28,28 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Fired when player's balance changes.
-        /// Parameters: new balance, delta (positive = gained, negative = spent)
+        /// Fired when player's total balance changes (legacy, for backwards compatibility).
+        /// Parameters: new total balance, delta (positive = gained, negative = spent)
         /// </summary>
         public static event Action<float, float> OnCurrencyChanged;
+
+        /// <summary>
+        /// Fired when checking account balance changes.
+        /// Parameters: new balance, delta
+        /// </summary>
+        public static event Action<float, float> OnCheckingBalanceChanged;
+
+        /// <summary>
+        /// Fired when investing account balance changes.
+        /// Parameters: new balance, delta
+        /// </summary>
+        public static event Action<float, float> OnInvestingBalanceChanged;
+
+        /// <summary>
+        /// Fired when money is transferred between accounts.
+        /// Parameters: amount, from account, to account
+        /// </summary>
+        public static event Action<float, AccountType, AccountType> OnTransfer;
 
         /// <summary>
         /// Fired when income is generated (for UI feedback).
@@ -108,6 +126,9 @@ namespace FortuneValley.Core
         public static void RaiseTick(int tickNumber) => OnTick?.Invoke(tickNumber);
         public static void RaiseGameSpeedChanged(float speed) => OnGameSpeedChanged?.Invoke(speed);
         public static void RaiseCurrencyChanged(float newBalance, float delta) => OnCurrencyChanged?.Invoke(newBalance, delta);
+        public static void RaiseCheckingBalanceChanged(float balance, float delta) => OnCheckingBalanceChanged?.Invoke(balance, delta);
+        public static void RaiseInvestingBalanceChanged(float balance, float delta) => OnInvestingBalanceChanged?.Invoke(balance, delta);
+        public static void RaiseTransfer(float amount, AccountType from, AccountType to) => OnTransfer?.Invoke(amount, from, to);
         public static void RaiseIncomeGenerated(float amount, string source) => OnIncomeGenerated?.Invoke(amount, source);
         public static void RaiseInvestmentCompounded(ActiveInvestment inv) => OnInvestmentCompounded?.Invoke(inv);
         public static void RaiseInvestmentCreated(ActiveInvestment inv) => OnInvestmentCreated?.Invoke(inv);
@@ -130,6 +151,9 @@ namespace FortuneValley.Core
             OnTick = null;
             OnGameSpeedChanged = null;
             OnCurrencyChanged = null;
+            OnCheckingBalanceChanged = null;
+            OnInvestingBalanceChanged = null;
+            OnTransfer = null;
             OnIncomeGenerated = null;
             OnInvestmentCompounded = null;
             OnInvestmentCreated = null;

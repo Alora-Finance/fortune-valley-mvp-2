@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: Bonds
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Bonds
-  _description: 
-  _riskLevel: 1
-  _annualReturnRate: 0.06
-  _volatilityRange: {x: 0.8, y: 1.2}
+  _displayName: Total Bond ETF (BND)
+  _description: A diversified mix of government and corporate bonds. Low risk with steady but modest returns.
+  _riskLevel: 0
+  _annualReturnRate: 0.04
+  _volatilityRange: {x: 0.95, y: 1.05}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
-  _minimumDeposit: 250
+  _minimumDeposit: 50

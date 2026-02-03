@@ -2,7 +2,8 @@
     "name": "FortuneValley.Editor",
     "rootNamespace": "FortuneValley.Editor",
     "references": [
-        "FortuneValley"
+        "FortuneValley",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

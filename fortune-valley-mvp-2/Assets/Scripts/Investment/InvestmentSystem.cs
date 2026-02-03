@@ -135,10 +135,10 @@ namespace FortuneValley.Core
                 return null;
             }
 
-            // Try to spend the money
-            if (!_currencyManager.TrySpend(amount, $"Investment in {definition.DisplayName}"))
+            // Try to spend the money from Investing account
+            if (!_currencyManager.TrySpend(amount, AccountType.Investing, $"Investment in {definition.DisplayName}"))
             {
-                Debug.Log($"[InvestmentSystem] Cannot afford ${amount:F0} investment");
+                Debug.Log($"[InvestmentSystem] Cannot afford ${amount:F0} investment from Investing account");
                 return null;
             }
 
@@ -169,8 +169,8 @@ namespace FortuneValley.Core
             float payout = investment.CurrentValue;
             _activeInvestments.Remove(investment);
 
-            // Add the money back to player's balance
-            _currencyManager.Add(payout, $"Withdrew {investment.Definition.DisplayName}");
+            // Add the money back to Investing account
+            _currencyManager.Add(payout, AccountType.Investing, $"Withdrew {investment.Definition.DisplayName}");
 
             GameEvents.RaiseInvestmentWithdrawn(investment, payout);
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using FortuneValley.Core;
 
 namespace FortuneValley.UI.Debug
@@ -17,8 +18,10 @@ namespace FortuneValley.UI.Debug
         [SerializeField] private GameManager _gameManager;
 
         [Header("UI Settings")]
-        [SerializeField] private bool _showDebugUI = true;
-        [SerializeField] private KeyCode _toggleKey = KeyCode.F1;
+        [SerializeField] private bool _showDebugUI = false;  // Hidden by default, toggle with F1
+
+        // Use const to avoid serialization issues with Key enum in New Input System
+        private const Key ToggleKey = Key.F1;
 
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
@@ -35,7 +38,7 @@ namespace FortuneValley.UI.Debug
 
         private void Update()
         {
-            if (Input.GetKeyDown(_toggleKey))
+            if (Keyboard.current != null && Keyboard.current[ToggleKey].wasPressedThisFrame)
             {
                 _showDebugUI = !_showDebugUI;
             }
@@ -70,7 +73,7 @@ namespace FortuneValley.UI.Debug
         private void DrawHeader()
         {
             GUILayout.Label("<size=18><b>Fortune Valley Debug</b></size>", CreateRichTextStyle());
-            GUILayout.Label($"Press {_toggleKey} to toggle");
+            GUILayout.Label($"Press {ToggleKey} to toggle");
             GUILayout.Space(10);
         }
 

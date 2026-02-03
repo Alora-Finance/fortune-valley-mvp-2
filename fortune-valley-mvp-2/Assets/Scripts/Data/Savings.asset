@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: Savings
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Savings Account
-  _description: Easy way to save money.
+  _displayName: Treasury Bills
+  _description: Ultra-safe government-backed short-term debt. The safest investment with guaranteed but small returns.
   _riskLevel: 0
-  _annualReturnRate: 0.01
-  _volatilityRange: {x: 1, y: 1}
+  _annualReturnRate: 0.03
+  _volatilityRange: {x: 0.98, y: 1.02}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 100

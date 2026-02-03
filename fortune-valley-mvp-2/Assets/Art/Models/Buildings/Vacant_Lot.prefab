@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 3116095970112616694}
   - component: {fileID: 4360490744152742079}
   - component: {fileID: 4917116751188155099}
+  - component: {fileID: -6009923922803126322}
+  - component: {fileID: 2920970724059982378}
   m_Layer: 0
   m_Name: Vacant_Lot
   m_TagString: Untagged
@@ -112,3 +114,41 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-6009923922803126322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6180748906265777673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db923ff0a3a3a4a1d90cd1ab93439876, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FortuneValley::FortuneValley.UI.LotVisual
+  _lotDefinition: {fileID: 0}
+  _mainRenderer: {fileID: 0}
+  _outlineEffect: {fileID: 0}
+  _ownerIndicator: {fileID: 0}
+  _availableColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.5}
+  _playerOwnedColor: {r: 0.2, g: 0.4, b: 0.9, a: 0.8}
+  _rivalOwnedColor: {r: 0.9, g: 0.2, b: 0.2, a: 0.8}
+  _hoverColor: {r: 0.71725684, g: 0.2980392, b: 1, a: 0.6}
+  _selectedColor: {r: 0.40270257, g: 0, b: 0.6981132, a: 0.8}
+  _hoverMaterial: {fileID: 0}
+  _ownershipParticles: {fileID: 0}
+--- !u!114 &2920970724059982378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6180748906265777673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e8a11248e9644a0f82a7cd4d242aa4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FortuneValley::FortuneValley.City.OwnershipParticles
+  _playerColor: {r: 0.2, g: 1, b: 0.3, a: 1}
+  _rivalColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  _particleSystem: {fileID: 0}
