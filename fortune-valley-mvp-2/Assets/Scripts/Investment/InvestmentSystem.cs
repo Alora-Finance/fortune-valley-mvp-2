@@ -109,11 +109,35 @@ namespace FortuneValley.Core
         private void HandleGameStart()
         {
             _activeInvestments.Clear();
+            InitializePrices();
         }
 
         private void HandleTick(int tickNumber)
         {
+            UpdatePrices();
             UpdateAllInvestments(tickNumber);
+        }
+
+        /// <summary>
+        /// Initialize all investment prices at game start.
+        /// </summary>
+        private void InitializePrices()
+        {
+            foreach (var def in _availableInvestments)
+            {
+                def.InitializePrice();
+            }
+        }
+
+        /// <summary>
+        /// Update all investment prices each tick based on volatility.
+        /// </summary>
+        private void UpdatePrices()
+        {
+            foreach (var def in _availableInvestments)
+            {
+                def.UpdatePrice();
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -121,44 +145,74 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Create a new investment.
+        /// Buy shares of an investment type.
+        /// If player already owns shares of this type, adds to existing position.
         /// </summary>
         /// <param name="definition">Type of investment</param>
-        /// <param name="amount">Amount to invest</param>
-        /// <returns>The created investment, or null if failed</returns>
-        public ActiveInvestment CreateInvestment(InvestmentDefinition definition, float amount)
+        /// <param name="shareCount">Number of shares to buy</param>
+        /// <returns>The investment (new or updated), or null if failed</returns>
+        public ActiveInvestment BuyShares(InvestmentDefinition definition, int shareCount)
         {
-            // Validate minimum deposit
-            if (amount < definition.MinimumDeposit)
+            if (shareCount <= 0)
             {
-                Debug.Log($"[InvestmentSystem] Amount ${amount:F0} is below minimum ${definition.MinimumDeposit:F0}");
+                Debug.Log("[InvestmentSystem] Share count must be positive");
                 return null;
             }
 
-            // Try to spend the money from Investing account
-            if (!_currencyManager.TrySpend(amount, AccountType.Investing, $"Investment in {definition.DisplayName}"))
+            float pricePerShare = definition.CurrentPrice;
+            float totalCost = shareCount * pricePerShare;
+
+            // Try to spend the money
+            if (!_currencyManager.TrySpend(totalCost, $"Buy {shareCount} shares of {definition.DisplayName}"))
             {
-                Debug.Log($"[InvestmentSystem] Cannot afford ${amount:F0} investment from Investing account");
+                Debug.Log($"[InvestmentSystem] Cannot afford ${totalCost:F0} for {shareCount} shares");
                 return null;
             }
 
-            // Create the investment
-            var investment = new ActiveInvestment(definition, amount, _timeManager.CurrentTick);
+            // Check if player already has this investment type - consolidate if so
+            var existing = _activeInvestments.Find(inv => inv.Definition == definition);
+            if (existing != null)
+            {
+                existing.AddShares(shareCount, pricePerShare);
+                Debug.Log($"[InvestmentSystem] Added {shareCount} shares to {definition.DisplayName}. " +
+                         $"Total: {existing.NumberOfShares} shares");
+                return existing;
+            }
+
+            // Create new investment
+            var investment = new ActiveInvestment(definition, shareCount, pricePerShare, _timeManager.CurrentTick);
             _activeInvestments.Add(investment);
 
             GameEvents.RaiseInvestmentCreated(investment);
 
-            Debug.Log($"[InvestmentSystem] Created ${amount:F0} investment in {definition.DisplayName}");
+            Debug.Log($"[InvestmentSystem] Bought {shareCount} shares of {definition.DisplayName} at ${pricePerShare:F2}/share");
 
             return investment;
         }
 
         /// <summary>
-        /// Withdraw an investment (cash out).
+        /// Legacy method - creates investment by amount (converted to shares).
         /// </summary>
-        /// <param name="investment">The investment to withdraw</param>
+        public ActiveInvestment CreateInvestment(InvestmentDefinition definition, float amount)
+        {
+            float pricePerShare = definition.CurrentPrice;
+            int shareCount = Mathf.FloorToInt(amount / pricePerShare);
+
+            if (shareCount <= 0)
+            {
+                Debug.Log($"[InvestmentSystem] Amount ${amount:F0} not enough for 1 share at ${pricePerShare:F2}");
+                return null;
+            }
+
+            return BuyShares(definition, shareCount);
+        }
+
+        /// <summary>
+        /// Sell all shares of an investment (cash out).
+        /// </summary>
+        /// <param name="investment">The investment to sell</param>
         /// <returns>Amount received (current value), or 0 if failed</returns>
-        public float WithdrawInvestment(ActiveInvestment investment)
+        public float SellAllShares(ActiveInvestment investment)
         {
             if (!_activeInvestments.Contains(investment))
             {
@@ -169,15 +223,23 @@ namespace FortuneValley.Core
             float payout = investment.CurrentValue;
             _activeInvestments.Remove(investment);
 
-            // Add the money back to Investing account
-            _currencyManager.Add(payout, AccountType.Investing, $"Withdrew {investment.Definition.DisplayName}");
+            // Add the money back to balance
+            _currencyManager.Add(payout, $"Sold {investment.NumberOfShares} shares of {investment.Definition.DisplayName}");
 
             GameEvents.RaiseInvestmentWithdrawn(investment, payout);
 
-            Debug.Log($"[InvestmentSystem] Withdrew ${payout:F2} from {investment.Definition.DisplayName}. " +
-                     $"Gain: ${investment.TotalGain:F2} ({investment.PercentageReturn:F1}%)");
+            Debug.Log($"[InvestmentSystem] Sold {investment.NumberOfShares} shares of {investment.Definition.DisplayName}. " +
+                     $"Payout: ${payout:F2}, Gain: ${investment.TotalGain:F2} ({investment.PercentageReturn:F1}%)");
 
             return payout;
+        }
+
+        /// <summary>
+        /// Legacy method - alias for SellAllShares.
+        /// </summary>
+        public float WithdrawInvestment(ActiveInvestment investment)
+        {
+            return SellAllShares(investment);
         }
 
         /// <summary>

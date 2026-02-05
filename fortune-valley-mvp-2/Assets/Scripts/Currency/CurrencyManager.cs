@@ -4,8 +4,7 @@ namespace FortuneValley.Core
 {
     /// <summary>
     /// Account types for player's money.
-    /// Checking: Day-to-day spending (lot purchases, upgrades)
-    /// Investing: Investment pool (buy/sell stocks and investments)
+    /// Kept for backward compatibility - all spending now uses a single pool.
     /// </summary>
     public enum AccountType
     {
@@ -14,18 +13,12 @@ namespace FortuneValley.Core
     }
 
     /// <summary>
-    /// Manages player's dual account system (Checking + Investing).
+    /// Manages player's money using a single unified balance.
     /// All spending and earning flows through this manager.
     ///
-    /// DESIGN NOTE: Dual accounts teach the concept of separating
-    /// spending money from investment capital - a core financial skill.
-    ///
-    /// Rules:
-    /// - Restaurant income → Checking
-    /// - Lot purchases → from Checking
-    /// - Investment buys → from Investing
-    /// - Investment sells → to Investing
-    /// - Player must Transfer between accounts
+    /// SIMPLIFIED: Previously used dual accounts (Checking/Investing).
+    /// Now uses a single balance for easier gameplay - all purchases
+    /// draw from the same pool.
     /// </summary>
     public class CurrencyManager : MonoBehaviour
     {
@@ -33,12 +26,9 @@ namespace FortuneValley.Core
         // CONFIGURATION
         // ═══════════════════════════════════════════════════════════════
 
-        [Header("Starting Balances")]
-        [Tooltip("Money the player starts with in Checking account")]
-        [SerializeField] private float _startingCheckingBalance = 500f;
-
-        [Tooltip("Money the player starts with in Investing account")]
-        [SerializeField] private float _startingInvestingBalance = 500f;
+        [Header("Starting Balance")]
+        [Tooltip("Money the player starts with")]
+        [SerializeField] private float _startingBalance = 1000f;
 
         [Header("Debug")]
         [SerializeField] private bool _logTransactions = false;
@@ -47,35 +37,31 @@ namespace FortuneValley.Core
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
-        private float _checkingBalance;
-        private float _investingBalance;
+        private float _balance;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Current checking account balance.
-        /// Used for: Lot purchases, restaurant upgrades, daily expenses.
+        /// Current balance. All purchases use this single pool.
         /// </summary>
-        public float CheckingBalance => _checkingBalance;
+        public float Balance => _balance;
 
         /// <summary>
-        /// Current investing account balance.
-        /// Used for: Buying and selling investments.
+        /// Alias for Balance (backward compatibility).
         /// </summary>
-        public float InvestingBalance => _investingBalance;
+        public float CheckingBalance => _balance;
 
         /// <summary>
-        /// Total balance across both accounts.
+        /// Alias for Balance (backward compatibility).
         /// </summary>
-        public float TotalBalance => _checkingBalance + _investingBalance;
+        public float InvestingBalance => _balance;
 
         /// <summary>
-        /// Legacy accessor for backwards compatibility.
-        /// Returns total balance.
+        /// Alias for Balance (backward compatibility).
         /// </summary>
-        public float Balance => TotalBalance;
+        public float TotalBalance => _balance;
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -101,25 +87,22 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Reset both accounts to starting amounts.
+        /// Reset balance to starting amount.
         /// </summary>
         public void ResetBalance()
         {
-            _checkingBalance = _startingCheckingBalance;
-            _investingBalance = _startingInvestingBalance;
+            _balance = _startingBalance;
 
-            GameEvents.RaiseCheckingBalanceChanged(_checkingBalance, 0f);
-            GameEvents.RaiseInvestingBalanceChanged(_investingBalance, 0f);
-            // Legacy event for backwards compatibility
-            GameEvents.RaiseCurrencyChanged(TotalBalance, 0f);
+            // Fire events for any listeners
+            GameEvents.RaiseCheckingBalanceChanged(_balance, 0f);
+            GameEvents.RaiseInvestingBalanceChanged(_balance, 0f);
+            GameEvents.RaiseCurrencyChanged(_balance, 0f);
         }
 
         /// <summary>
-        /// Add money to a specific account.
+        /// Add money to balance.
+        /// AccountType parameter kept for backward compatibility but ignored.
         /// </summary>
-        /// <param name="amount">Amount to add (must be positive)</param>
-        /// <param name="account">Which account to add to</param>
-        /// <param name="source">Description of where the money came from</param>
         public void Add(float amount, AccountType account, string source = "Unknown")
         {
             if (amount <= 0)
@@ -128,30 +111,19 @@ namespace FortuneValley.Core
                 return;
             }
 
-            if (account == AccountType.Checking)
-            {
-                _checkingBalance += amount;
-                GameEvents.RaiseCheckingBalanceChanged(_checkingBalance, amount);
-            }
-            else
-            {
-                _investingBalance += amount;
-                GameEvents.RaiseInvestingBalanceChanged(_investingBalance, amount);
-            }
+            _balance += amount;
 
             if (_logTransactions)
             {
-                Debug.Log($"[CurrencyManager] +${amount:F2} to {account} from {source}. " +
-                          $"Checking: ${_checkingBalance:F2}, Investing: ${_investingBalance:F2}");
+                Debug.Log($"[CurrencyManager] +${amount:F2} from {source}. Balance: ${_balance:F2}");
             }
 
-            // Legacy events
-            GameEvents.RaiseCurrencyChanged(TotalBalance, amount);
+            GameEvents.RaiseCurrencyChanged(_balance, amount);
             GameEvents.RaiseIncomeGenerated(amount, source);
         }
 
         /// <summary>
-        /// Add money to Checking account (convenience method).
+        /// Add money to balance.
         /// </summary>
         public void Add(float amount, string source = "Unknown")
         {
@@ -159,12 +131,9 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
-        /// Try to spend money from a specific account. Returns true if successful.
+        /// Try to spend money. Returns true if successful.
+        /// AccountType parameter kept for backward compatibility but ignored.
         /// </summary>
-        /// <param name="amount">Amount to spend (must be positive)</param>
-        /// <param name="account">Which account to spend from</param>
-        /// <param name="reason">Description of what the money is for</param>
-        /// <returns>True if had enough money and it was spent</returns>
         public bool TrySpend(float amount, AccountType account, string reason = "Unknown")
         {
             if (amount <= 0)
@@ -173,42 +142,28 @@ namespace FortuneValley.Core
                 return false;
             }
 
-            float currentBalance = account == AccountType.Checking ? _checkingBalance : _investingBalance;
-
-            if (currentBalance < amount)
+            if (_balance < amount)
             {
                 if (_logTransactions)
                 {
-                    Debug.Log($"[CurrencyManager] Cannot spend ${amount:F2} from {account} for {reason}. " +
-                              $"Balance: ${currentBalance:F2}");
+                    Debug.Log($"[CurrencyManager] Cannot spend ${amount:F2} for {reason}. Balance: ${_balance:F2}");
                 }
                 return false;
             }
 
-            if (account == AccountType.Checking)
-            {
-                _checkingBalance -= amount;
-                GameEvents.RaiseCheckingBalanceChanged(_checkingBalance, -amount);
-            }
-            else
-            {
-                _investingBalance -= amount;
-                GameEvents.RaiseInvestingBalanceChanged(_investingBalance, -amount);
-            }
+            _balance -= amount;
 
             if (_logTransactions)
             {
-                Debug.Log($"[CurrencyManager] -${amount:F2} from {account} for {reason}. " +
-                          $"Checking: ${_checkingBalance:F2}, Investing: ${_investingBalance:F2}");
+                Debug.Log($"[CurrencyManager] -${amount:F2} for {reason}. Balance: ${_balance:F2}");
             }
 
-            // Legacy event
-            GameEvents.RaiseCurrencyChanged(TotalBalance, -amount);
+            GameEvents.RaiseCurrencyChanged(_balance, -amount);
             return true;
         }
 
         /// <summary>
-        /// Try to spend from Checking account (convenience method).
+        /// Try to spend from balance.
         /// </summary>
         public bool TrySpend(float amount, string reason = "Unknown")
         {
@@ -216,123 +171,62 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
-        /// Transfer money between accounts.
+        /// Transfer between accounts (no-op with single balance, kept for compatibility).
+        /// Always returns true since there's only one pool now.
         /// </summary>
-        /// <param name="amount">Amount to transfer</param>
-        /// <param name="from">Source account</param>
-        /// <param name="to">Destination account</param>
-        /// <returns>True if transfer succeeded</returns>
         public bool Transfer(float amount, AccountType from, AccountType to)
         {
-            if (amount <= 0)
-            {
-                Debug.LogWarning($"[CurrencyManager] Tried to transfer non-positive amount: {amount}");
+            // With single balance, transfers are no-ops but we still fire the event
+            if (amount <= 0 || from == to)
                 return false;
-            }
 
-            if (from == to)
-            {
-                Debug.LogWarning("[CurrencyManager] Cannot transfer to the same account");
-                return false;
-            }
-
-            float sourceBalance = from == AccountType.Checking ? _checkingBalance : _investingBalance;
-
-            if (sourceBalance < amount)
-            {
-                if (_logTransactions)
-                {
-                    Debug.Log($"[CurrencyManager] Cannot transfer ${amount:F2} from {from}. " +
-                              $"Balance: ${sourceBalance:F2}");
-                }
-                return false;
-            }
-
-            // Perform transfer
-            if (from == AccountType.Checking)
-            {
-                _checkingBalance -= amount;
-                _investingBalance += amount;
-            }
-            else
-            {
-                _investingBalance -= amount;
-                _checkingBalance += amount;
-            }
-
-            if (_logTransactions)
-            {
-                Debug.Log($"[CurrencyManager] Transferred ${amount:F2} from {from} to {to}. " +
-                          $"Checking: ${_checkingBalance:F2}, Investing: ${_investingBalance:F2}");
-            }
-
-            // Fire events
-            GameEvents.RaiseCheckingBalanceChanged(_checkingBalance,
-                from == AccountType.Checking ? -amount : amount);
-            GameEvents.RaiseInvestingBalanceChanged(_investingBalance,
-                from == AccountType.Investing ? -amount : amount);
             GameEvents.RaiseTransfer(amount, from, to);
-
             return true;
         }
 
         /// <summary>
-        /// Check if player can afford an amount from a specific account.
+        /// Check if player can afford an amount.
+        /// AccountType parameter kept for backward compatibility but ignored.
         /// </summary>
         public bool CanAfford(float amount, AccountType account)
         {
-            return account == AccountType.Checking
-                ? _checkingBalance >= amount
-                : _investingBalance >= amount;
+            return _balance >= amount;
         }
 
         /// <summary>
-        /// Check if player can afford from Checking (convenience method).
+        /// Check if player can afford an amount.
         /// </summary>
         public bool CanAfford(float amount)
         {
-            return CanAfford(amount, AccountType.Checking);
+            return _balance >= amount;
         }
 
         /// <summary>
-        /// Get balance for a specific account.
+        /// Get current balance.
+        /// AccountType parameter kept for backward compatibility but ignored.
         /// </summary>
         public float GetBalance(AccountType account)
         {
-            return account == AccountType.Checking ? _checkingBalance : _investingBalance;
+            return _balance;
         }
 
         /// <summary>
         /// Set balance directly (use sparingly, mainly for testing).
+        /// AccountType parameter kept for backward compatibility but ignored.
         /// </summary>
         public void SetBalance(AccountType account, float amount)
         {
-            if (account == AccountType.Checking)
-            {
-                float delta = amount - _checkingBalance;
-                _checkingBalance = amount;
-                GameEvents.RaiseCheckingBalanceChanged(_checkingBalance, delta);
-            }
-            else
-            {
-                float delta = amount - _investingBalance;
-                _investingBalance = amount;
-                GameEvents.RaiseInvestingBalanceChanged(_investingBalance, delta);
-            }
-
-            GameEvents.RaiseCurrencyChanged(TotalBalance, 0f);
+            float delta = amount - _balance;
+            _balance = amount;
+            GameEvents.RaiseCurrencyChanged(_balance, delta);
         }
 
         /// <summary>
-        /// Legacy SetBalance for backwards compatibility.
-        /// Sets both accounts proportionally.
+        /// Set balance directly.
         /// </summary>
         public void SetBalance(float amount)
         {
-            // Split evenly between accounts
-            float half = amount / 2f;
-            SetBalance(AccountType.Checking, half);
-            SetBalance(AccountType.Investing, half);
+            SetBalance(AccountType.Checking, amount);
         }
     }
 }

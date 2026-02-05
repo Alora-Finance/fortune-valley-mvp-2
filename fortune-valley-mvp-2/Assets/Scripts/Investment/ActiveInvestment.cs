@@ -3,11 +3,14 @@ using UnityEngine;
 namespace FortuneValley.Core
 {
     /// <summary>
-    /// Runtime data for an active investment held by the player.
+    /// Runtime data for an active investment (shares) held by the player.
     /// This is NOT a MonoBehaviour - it's pure data managed by InvestmentSystem.
     ///
     /// LEARNING NOTE: All values are exposed explicitly so students can see
     /// exactly how their investment is performing and WHY.
+    ///
+    /// SHARE-BASED SYSTEM: Player owns N shares at fluctuating prices.
+    /// Value changes based on current market price, not compounding.
     /// </summary>
     [System.Serializable]
     public class ActiveInvestment
@@ -27,29 +30,45 @@ namespace FortuneValley.Core
         public InvestmentDefinition Definition { get; private set; }
 
         // ═══════════════════════════════════════════════════════════════
-        // CORE VALUES (what students need to see)
+        // SHARE TRACKING
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// The original amount invested. Never changes.
+        /// Number of shares owned.
         /// </summary>
-        public float Principal { get; private set; }
+        public int NumberOfShares { get; private set; }
 
         /// <summary>
-        /// Current value including all gains/losses.
+        /// Average price paid per share (cost basis).
+        /// Used to calculate gain/loss accurately when buying at different prices.
         /// </summary>
-        public float CurrentValue { get; private set; }
+        public float AveragePurchasePrice { get; private set; }
 
         /// <summary>
-        /// Total gain or loss (CurrentValue - Principal).
+        /// Total cost basis (what the player paid for all shares).
+        /// </summary>
+        public float TotalCostBasis => NumberOfShares * AveragePurchasePrice;
+
+        /// <summary>
+        /// Alias for TotalCostBasis (backward compatibility).
+        /// </summary>
+        public float Principal => TotalCostBasis;
+
+        /// <summary>
+        /// Current value based on current share price.
+        /// </summary>
+        public float CurrentValue => NumberOfShares * Definition.CurrentPrice;
+
+        /// <summary>
+        /// Total gain or loss (CurrentValue - TotalCostBasis).
         /// Positive = profit, negative = loss.
         /// </summary>
-        public float TotalGain => CurrentValue - Principal;
+        public float TotalGain => CurrentValue - TotalCostBasis;
 
         /// <summary>
-        /// Percentage return: (CurrentValue / Principal - 1) * 100
+        /// Percentage return: (CurrentValue / TotalCostBasis - 1) * 100
         /// </summary>
-        public float PercentageReturn => Principal > 0 ? (CurrentValue / Principal - 1f) * 100f : 0f;
+        public float PercentageReturn => TotalCostBasis > 0 ? (CurrentValue / TotalCostBasis - 1f) * 100f : 0f;
 
         // ═══════════════════════════════════════════════════════════════
         // TIME TRACKING
@@ -66,19 +85,17 @@ namespace FortuneValley.Core
         public int TicksHeld { get; private set; }
 
         /// <summary>
-        /// Tick when the last compound event occurred.
+        /// Legacy field kept for compatibility.
         /// </summary>
         public int LastCompoundTick { get; private set; }
 
         /// <summary>
-        /// How many times this investment has compounded.
-        /// LEARNING NOTE: Showing this helps students understand compound frequency.
+        /// Legacy field kept for compatibility.
         /// </summary>
         public int CompoundCount { get; private set; }
 
         /// <summary>
-        /// The gain from the most recent compound event.
-        /// Used for visual feedback (celebration effects).
+        /// The gain from the most recent price change (for visual feedback).
         /// </summary>
         public float LastCompoundGain { get; private set; }
 
@@ -86,12 +103,27 @@ namespace FortuneValley.Core
         // CONSTRUCTOR
         // ═══════════════════════════════════════════════════════════════
 
+        public ActiveInvestment(InvestmentDefinition definition, int shares, float pricePerShare, int currentTick)
+        {
+            Id = System.Guid.NewGuid().ToString();
+            Definition = definition;
+            NumberOfShares = shares;
+            AveragePurchasePrice = pricePerShare;
+            CreatedAtTick = currentTick;
+            LastCompoundTick = currentTick;
+            TicksHeld = 0;
+            CompoundCount = 0;
+        }
+
+        // Legacy constructor for backward compatibility
         public ActiveInvestment(InvestmentDefinition definition, float principal, int currentTick)
         {
             Id = System.Guid.NewGuid().ToString();
             Definition = definition;
-            Principal = principal;
-            CurrentValue = principal;
+            // Convert principal to shares at current price
+            float price = definition.CurrentPrice;
+            NumberOfShares = Mathf.FloorToInt(principal / price);
+            AveragePurchasePrice = price;
             CreatedAtTick = currentTick;
             LastCompoundTick = currentTick;
             TicksHeld = 0;
@@ -99,8 +131,25 @@ namespace FortuneValley.Core
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // METHODS (called by InvestmentSystem)
+        // METHODS
         // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Add more shares to this position (averaging the cost basis).
+        /// </summary>
+        public void AddShares(int count, float pricePerShare)
+        {
+            if (count <= 0)
+                return;
+
+            // Calculate new average purchase price (weighted average)
+            float totalOldCost = NumberOfShares * AveragePurchasePrice;
+            float newCost = count * pricePerShare;
+            int newTotalShares = NumberOfShares + count;
+
+            AveragePurchasePrice = (totalOldCost + newCost) / newTotalShares;
+            NumberOfShares = newTotalShares;
+        }
 
         /// <summary>
         /// Called each tick to update time held.
@@ -111,59 +160,14 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
-        /// Apply compound interest. Returns true if compounding occurred.
+        /// Legacy method - no longer applies compounding (price fluctuation replaces it).
+        /// Returns false always since we use price-based value changes now.
         /// </summary>
         public bool TryCompound(int currentTick)
         {
-            // Check if enough ticks have passed since last compound
-            int ticksSinceLastCompound = currentTick - LastCompoundTick;
-
-            if (ticksSinceLastCompound >= Definition.CompoundingFrequency)
-            {
-                // Calculate compound interest
-                // Using the formula: newValue = oldValue * (1 + rate)
-                // Rate is per compound period, derived from annual rate
-                float ratePerPeriod = Definition.AnnualReturnRate / Definition.CompoundsPerYear;
-
-                // Apply volatility for risky investments
-                float actualRate = ApplyVolatility(ratePerPeriod);
-
-                // Compound!
-                float previousValue = CurrentValue;
-                CurrentValue = CurrentValue * (1f + actualRate);
-
-                // Track the gain from this compound (for visual feedback)
-                LastCompoundGain = CurrentValue - previousValue;
-
-                // Update tracking
-                LastCompoundTick = currentTick;
-                CompoundCount++;
-
-                return true;
-            }
-
+            // Price fluctuation now happens in InvestmentDefinition.UpdatePrice()
+            // This method is kept for backward compatibility but does nothing
             return false;
-        }
-
-        /// <summary>
-        /// Apply random volatility based on risk level.
-        /// Low risk = no volatility, High risk = significant swings.
-        /// </summary>
-        private float ApplyVolatility(float baseRate)
-        {
-            if (Definition.RiskLevel == RiskLevel.Low)
-            {
-                // No volatility - steady returns
-                return baseRate;
-            }
-
-            // Apply volatility: rate can swing within the defined range
-            float volatilityMultiplier = Random.Range(
-                Definition.VolatilityRange.x,
-                Definition.VolatilityRange.y
-            );
-
-            return baseRate * volatilityMultiplier;
         }
 
         /// <summary>
@@ -175,13 +179,9 @@ namespace FortuneValley.Core
             string gainOrLoss = TotalGain >= 0 ? "gained" : "lost";
             string absGain = Mathf.Abs(TotalGain).ToString("F2");
 
-            if (CompoundCount == 0)
-            {
-                return $"Your ${Principal:F2} hasn't compounded yet. It will grow after {Definition.CompoundingFrequency} days.";
-            }
-
-            return $"Your ${Principal:F2} has {gainOrLoss} ${absGain} ({PercentageReturn:F1}%) " +
-                   $"after {TicksHeld} days and {CompoundCount} compound events.";
+            return $"Your {NumberOfShares} shares (bought at avg ${AveragePurchasePrice:F2}) " +
+                   $"have {gainOrLoss} ${absGain} ({PercentageReturn:F1}%) " +
+                   $"after {TicksHeld} days. Current price: ${Definition.CurrentPrice:F2}/share.";
         }
     }
 }

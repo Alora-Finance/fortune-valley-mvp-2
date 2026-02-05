@@ -63,12 +63,14 @@ namespace FortuneValley.Core
         {
             GameEvents.OnTick += HandleTick;
             GameEvents.OnGameStart += HandleGameStart;
+            GameEvents.OnLotPurchased += HandleLotPurchased;
         }
 
         private void OnDisable()
         {
             GameEvents.OnTick -= HandleTick;
             GameEvents.OnGameStart -= HandleGameStart;
+            GameEvents.OnLotPurchased -= HandleLotPurchased;
         }
 
         private void HandleGameStart()
@@ -78,6 +80,43 @@ namespace FortuneValley.Core
             _targetedLotId = null;
             _warningIssuedTick = -1;
             TicksUntilPurchase = _config.PurchaseInterval;
+        }
+
+        private void HandleLotPurchased(string lotId, Owner owner)
+        {
+            // If the player bought the lot we were targeting, pick a new target
+            if (owner == Owner.Player && lotId == _targetedLotId)
+            {
+                if (_logBehavior)
+                {
+                    Debug.Log($"[RivalAI] Player bought targeted lot {lotId}, picking new target");
+                }
+
+                // Pick a new target immediately
+                string newTarget = PickTargetLot();
+                _targetedLotId = newTarget;
+
+                if (newTarget != null)
+                {
+                    // Notify UI of new target with remaining time
+                    GameEvents.RaiseRivalTargetChanged(newTarget, TicksUntilPurchase);
+
+                    if (_logBehavior)
+                    {
+                        Debug.Log($"[RivalAI] New target: {newTarget} in {TicksUntilPurchase} ticks");
+                    }
+                }
+                else
+                {
+                    // No more lots available - clear the target indicator
+                    GameEvents.RaiseRivalTargetChanged(null, 0);
+
+                    if (_logBehavior)
+                    {
+                        Debug.Log("[RivalAI] No available lots to target");
+                    }
+                }
+            }
         }
 
         private void HandleTick(int tickNumber)

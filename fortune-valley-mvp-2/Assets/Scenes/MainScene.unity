@@ -6171,7 +6171,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abcd44e9481b043e29893ac27bf700a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityManager
-  _allLots: []
+  _allLots:
+  - {fileID: 11400000, guid: 979b8737ae3514a97b1f22fd9c61f779, type: 2}
+  - {fileID: 11400000, guid: d140c4a94cbcd49219bc906210b02776, type: 2}
+  - {fileID: 11400000, guid: 2e5ce42ae6b1542dcb1e2e95c3affe85, type: 2}
+  - {fileID: 11400000, guid: e48b05f754ee3468b9ae102522ea9ecf, type: 2}
+  - {fileID: 11400000, guid: e04fcc208e88046babdf9f6a44b4b7fd, type: 2}
+  - {fileID: 11400000, guid: d3019583eedac472491b130ef3ca62eb, type: 2}
+  - {fileID: 11400000, guid: d71712f680b294234a9d20ad22c4d28f, type: 2}
   _currencyManager: {fileID: 404598230}
   _logPurchases: 0
 --- !u!114 &404598228

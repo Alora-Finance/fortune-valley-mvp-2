@@ -27,7 +27,6 @@ namespace FortuneValley.UI.Debug
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
-        private float _investAmount = 500f;
         private int _selectedInvestmentIndex = 0;
         private string _lastAction = "";
         private Vector2 _scrollPosition;
@@ -167,18 +166,13 @@ namespace FortuneValley.UI.Debug
             GUILayout.Label("<b>═══ INVESTMENTS ═══</b>", CreateRichTextStyle());
 
             var investments = _gameManager.InvestmentSystem;
+            var currency = _gameManager.CurrencyManager;
 
             // Portfolio summary
             GUILayout.Label($"Portfolio: ${investments.TotalPortfolioValue:F0}");
             GUILayout.Label($"Total gain: ${investments.TotalGain:F0}");
 
-            // Investment amount input
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Amount:", GUILayout.Width(60));
-            string amountStr = GUILayout.TextField(_investAmount.ToString("F0"));
-            if (float.TryParse(amountStr, out float newAmount))
-                _investAmount = newAmount;
-            GUILayout.EndHorizontal();
+            GUILayout.Space(5);
 
             // Investment type selection
             var available = investments.AvailableInvestments;
@@ -192,36 +186,79 @@ namespace FortuneValley.UI.Debug
                 _selectedInvestmentIndex = GUILayout.SelectionGrid(_selectedInvestmentIndex, names, 2);
 
                 var selected = available[_selectedInvestmentIndex];
-                GUILayout.Label($"Risk: {selected.RiskLevel} | Return: {selected.AnnualReturnRate * 100:F0}%");
 
-                if (GUILayout.Button($"Invest ${_investAmount:F0}"))
+                // Show current share price
+                GUILayout.Label($"<b>Price: ${selected.CurrentPrice:F2}/share</b>", CreateRichTextStyle());
+                GUILayout.Label($"Risk: {selected.RiskLevel} | Expected: {selected.AnnualReturnRate * 100:F0}%/yr");
+
+                // Quick buy buttons
+                GUILayout.BeginHorizontal();
+
+                float price1 = selected.CurrentPrice * 1;
+                float price10 = selected.CurrentPrice * 10;
+                float price100 = selected.CurrentPrice * 100;
+
+                // Buy 1 share
+                GUI.enabled = currency.CanAfford(price1);
+                if (GUILayout.Button($"Buy 1\n(${price1:F0})"))
                 {
-                    var inv = investments.CreateInvestment(selected, _investAmount);
+                    var inv = investments.BuyShares(selected, 1);
                     if (inv != null)
-                        LogAction($"Invested ${_investAmount:F0} in {selected.DisplayName}");
+                        LogAction($"Bought 1 share of {selected.DisplayName}");
                     else
-                        LogAction("Investment failed");
+                        LogAction("Purchase failed");
                 }
+
+                // Buy 10 shares
+                GUI.enabled = currency.CanAfford(price10);
+                if (GUILayout.Button($"Buy 10\n(${price10:F0})"))
+                {
+                    var inv = investments.BuyShares(selected, 10);
+                    if (inv != null)
+                        LogAction($"Bought 10 shares of {selected.DisplayName}");
+                    else
+                        LogAction("Purchase failed");
+                }
+
+                // Buy 100 shares
+                GUI.enabled = currency.CanAfford(price100);
+                if (GUILayout.Button($"Buy 100\n(${price100:F0})"))
+                {
+                    var inv = investments.BuyShares(selected, 100);
+                    if (inv != null)
+                        LogAction($"Bought 100 shares of {selected.DisplayName}");
+                    else
+                        LogAction("Purchase failed");
+                }
+
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
             }
+
+            GUILayout.Space(5);
 
             // Active investments
             if (investments.ActiveInvestments.Count > 0)
             {
-                GUILayout.Label("Active investments:");
+                GUILayout.Label("<b>Your Holdings:</b>", CreateRichTextStyle());
                 foreach (var inv in investments.ActiveInvestments)
                 {
-                    GUILayout.BeginHorizontal();
                     string gainColor = inv.TotalGain >= 0 ? "green" : "red";
-                    GUILayout.Label($"<color={gainColor}>{inv.Definition.DisplayName}: ${inv.CurrentValue:F0} ({inv.TotalGain:+0;-0})</color>",
-                        CreateRichTextStyle(), GUILayout.Width(200));
 
-                    if (GUILayout.Button("Withdraw"))
+                    // Show shares, value, and gain/loss
+                    GUILayout.Label($"<color={gainColor}>{inv.Definition.DisplayName}</color>", CreateRichTextStyle());
+                    GUILayout.Label($"  {inv.NumberOfShares} shares @ ${inv.Definition.CurrentPrice:F2} = ${inv.CurrentValue:F0}");
+                    GUILayout.Label($"  <color={gainColor}>Gain: ${inv.TotalGain:+0;-0} ({inv.PercentageReturn:+0.0;-0.0}%)</color>",
+                        CreateRichTextStyle());
+
+                    if (GUILayout.Button($"Sell All ({inv.NumberOfShares} shares)"))
                     {
-                        float payout = investments.WithdrawInvestment(inv);
-                        LogAction($"Withdrew ${payout:F0}");
+                        float payout = investments.SellAllShares(inv);
+                        LogAction($"Sold all for ${payout:F0}");
                         break; // List modified, exit loop
                     }
-                    GUILayout.EndHorizontal();
+
+                    GUILayout.Space(3);
                 }
             }
 
