@@ -127,6 +127,8 @@ namespace FortuneValley.Core
                     {
                         _warningIssuedTick = currentTick;
                         GameEvents.RaiseRivalTargetingLot(_targetedLotId);
+                        // Raise enhanced event with days until purchase
+                        GameEvents.RaiseRivalTargetChanged(_targetedLotId, ticksRemaining);
 
                         if (_logBehavior)
                         {
@@ -160,6 +162,9 @@ namespace FortuneValley.Core
             // Spend money and purchase
             _money -= cost;
             _cityManager.RivalPurchaseLot(lotToBuy, tickNumber);
+
+            // Raise event for UI feedback (overlay, etc.)
+            GameEvents.RaiseRivalPurchasedLot(lotToBuy);
 
             if (_logBehavior)
             {

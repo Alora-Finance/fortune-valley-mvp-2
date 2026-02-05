@@ -31,12 +31,24 @@ namespace FortuneValley.UI.HUD
         [Header("Animation")]
         [SerializeField] private float _deltaDisplayDuration = 1.5f;
 
+        [Header("Pulse Animation")]
+        [Tooltip("Duration of the pulse effect")]
+        [SerializeField] private float _pulseDuration = 0.3f;
+        [Tooltip("Maximum scale during pulse")]
+        [SerializeField] private float _pulseScale = 1.1f;
+        [Tooltip("Color to flash during pulse")]
+        [SerializeField] private Color _pulseColor = new Color(1f, 1f, 0.5f);
+
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
         private float _currentBalance;
         private float _deltaTimer;
+        private float _pulseTimer;
+        private bool _isPulsing;
+        private Vector3 _originalScale;
+        private Color _originalBalanceColor;
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -55,6 +67,13 @@ namespace FortuneValley.UI.HUD
             {
                 _deltaText.gameObject.SetActive(false);
             }
+
+            // Cache original values for pulse animation
+            _originalScale = transform.localScale;
+            if (_balanceText != null)
+            {
+                _originalBalanceColor = _balanceText.color;
+            }
         }
 
         private void Update()
@@ -66,6 +85,40 @@ namespace FortuneValley.UI.HUD
                 if (_deltaTimer <= 0 && _deltaText != null)
                 {
                     _deltaText.gameObject.SetActive(false);
+                }
+            }
+
+            // Handle pulse animation
+            if (_isPulsing)
+            {
+                _pulseTimer += Time.deltaTime;
+                float progress = _pulseTimer / _pulseDuration;
+
+                if (progress >= 1f)
+                {
+                    // Animation complete - reset
+                    _isPulsing = false;
+                    transform.localScale = _originalScale;
+                    if (_balanceText != null)
+                    {
+                        _balanceText.color = _originalBalanceColor;
+                    }
+                }
+                else
+                {
+                    // Pulse animation: scale up then back down
+                    float scaleProgress = progress < 0.5f
+                        ? progress * 2f  // 0 to 0.5 -> 0 to 1
+                        : 1f - ((progress - 0.5f) * 2f);  // 0.5 to 1 -> 1 to 0
+
+                    float currentScale = 1f + ((_pulseScale - 1f) * scaleProgress);
+                    transform.localScale = _originalScale * currentScale;
+
+                    // Color flash
+                    if (_balanceText != null)
+                    {
+                        _balanceText.color = Color.Lerp(_originalBalanceColor, _pulseColor, scaleProgress);
+                    }
                 }
             }
         }
@@ -94,6 +147,16 @@ namespace FortuneValley.UI.HUD
             {
                 ShowDelta(delta);
             }
+        }
+
+        /// <summary>
+        /// Trigger a pulse animation to highlight income arrival.
+        /// Called by IncomeFeedbackController when coin animation completes.
+        /// </summary>
+        public void PulseOnIncome()
+        {
+            _isPulsing = true;
+            _pulseTimer = 0f;
         }
 
         // ═══════════════════════════════════════════════════════════════

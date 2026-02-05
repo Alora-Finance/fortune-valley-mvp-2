@@ -154,6 +154,9 @@ namespace FortuneValley.Core
             _totalEarned += income;
             _currencyManager.Add(income, "Restaurant");
 
+            // Raise event for visual feedback system (floating text, coin animation)
+            GameEvents.RaiseIncomeGeneratedWithPosition(income, transform.position);
+
             if (_logIncome)
             {
                 Debug.Log($"[RestaurantSystem] Generated ${income:F2}. Total: ${_totalEarned:F2}");

@@ -44,6 +44,26 @@ namespace FortuneValley.UI
         [Tooltip("Particle system for ownership visual feedback")]
         [SerializeField] private OwnershipParticles _ownershipParticles;
 
+        [Header("Rival Targeting")]
+        [Tooltip("Visual effect when rival is targeting this lot")]
+        [SerializeField] private GameObject _rivalTargetEffect;
+        [Tooltip("Color for rival targeting outline")]
+        [SerializeField] private Color _rivalTargetColor = new Color(1f, 0.2f, 0.2f, 0.8f);
+        [Tooltip("Pulse speed when targeted")]
+        [SerializeField] private float _targetPulseSpeed = 2f;
+
+        [Header("Ownership Flags")]
+        [Tooltip("Flag/banner showing ownership")]
+        [SerializeField] private GameObject _ownershipFlag;
+        [Tooltip("Renderer for the flag to set color")]
+        [SerializeField] private Renderer _flagRenderer;
+        [Tooltip("For Sale sign shown on available lots")]
+        [SerializeField] private GameObject _forSaleSign;
+        [Tooltip("Icon or mesh for player ownership")]
+        [SerializeField] private GameObject _playerIcon;
+        [Tooltip("Icon or mesh for rival ownership")]
+        [SerializeField] private GameObject _rivalIcon;
+
         [Tooltip("Original material (cached on Start)")]
         private Material _originalMaterial;
 
@@ -53,7 +73,10 @@ namespace FortuneValley.UI
 
         private bool _isHovered;
         private bool _isSelected;
+        private bool _isRivalTarget;
         private Owner _currentOwner = Owner.None;
+        private float _targetPulseTimer;
+        private int _daysUntilRivalPurchase;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -62,6 +85,7 @@ namespace FortuneValley.UI
         public CityLotDefinition LotDefinition => _lotDefinition;
         public bool IsHovered => _isHovered;
         public bool IsSelected => _isSelected;
+        public bool IsRivalTarget => _isRivalTarget;
         public Owner CurrentOwner => _currentOwner;
 
         // ═══════════════════════════════════════════════════════════════
@@ -81,16 +105,68 @@ namespace FortuneValley.UI
             {
                 _outlineEffect.SetActive(false);
             }
+
+            // Hide rival target effect initially
+            if (_rivalTargetEffect != null)
+            {
+                _rivalTargetEffect.SetActive(false);
+            }
+
+            // Initialize ownership flags
+            InitializeOwnershipFlags();
+        }
+
+        private void InitializeOwnershipFlags()
+        {
+            // Hide all ownership indicators initially
+            if (_ownershipFlag != null)
+            {
+                _ownershipFlag.SetActive(false);
+            }
+            if (_playerIcon != null)
+            {
+                _playerIcon.SetActive(false);
+            }
+            if (_rivalIcon != null)
+            {
+                _rivalIcon.SetActive(false);
+            }
+            // Show "For Sale" sign on available lots
+            if (_forSaleSign != null)
+            {
+                _forSaleSign.SetActive(true);
+            }
         }
 
         private void OnEnable()
         {
             GameEvents.OnLotPurchased += HandleLotPurchased;
+            GameEvents.OnRivalTargetChanged += HandleRivalTargetChanged;
+            GameEvents.OnRivalPurchasedLot += HandleRivalPurchasedLot;
         }
 
         private void OnDisable()
         {
             GameEvents.OnLotPurchased -= HandleLotPurchased;
+            GameEvents.OnRivalTargetChanged -= HandleRivalTargetChanged;
+            GameEvents.OnRivalPurchasedLot -= HandleRivalPurchasedLot;
+        }
+
+        private void Update()
+        {
+            // Pulse effect when rival is targeting this lot
+            if (_isRivalTarget && _rivalTargetEffect != null)
+            {
+                _targetPulseTimer += Time.deltaTime * _targetPulseSpeed;
+
+                // Increase intensity as deadline approaches
+                float urgency = 1f - Mathf.Clamp01(_daysUntilRivalPurchase / 10f);
+                float pulse = (Mathf.Sin(_targetPulseTimer * Mathf.PI) + 1f) / 2f;
+                float intensity = 0.5f + (0.5f * urgency);
+
+                // Scale the effect based on urgency
+                _rivalTargetEffect.transform.localScale = Vector3.one * (1f + (pulse * 0.2f * intensity));
+            }
         }
 
         private void Start()
@@ -107,10 +183,34 @@ namespace FortuneValley.UI
             if (_lotDefinition != null && _lotDefinition.LotId == lotId)
             {
                 _currentOwner = owner;
+                _isRivalTarget = false; // No longer a target once purchased
                 UpdateVisuals();
 
                 // Update ownership particles
                 _ownershipParticles?.SetOwner(owner);
+            }
+        }
+
+        private void HandleRivalTargetChanged(string lotId, int daysUntil)
+        {
+            if (_lotDefinition == null) return;
+
+            bool wasTarget = _isRivalTarget;
+            _isRivalTarget = (_lotDefinition.LotId == lotId);
+            _daysUntilRivalPurchase = daysUntil;
+
+            if (_isRivalTarget != wasTarget)
+            {
+                UpdateRivalTargetVisual();
+            }
+        }
+
+        private void HandleRivalPurchasedLot(string lotId)
+        {
+            if (_lotDefinition != null && _lotDefinition.LotId == lotId)
+            {
+                _isRivalTarget = false;
+                UpdateRivalTargetVisual();
             }
         }
 
@@ -169,6 +269,56 @@ namespace FortuneValley.UI
             UpdateOutline();
             UpdateOwnerIndicator();
             UpdateMaterial();
+            UpdateRivalTargetVisual();
+            UpdateOwnershipFlags();
+        }
+
+        private void UpdateOwnershipFlags()
+        {
+            // Update "For Sale" sign visibility
+            if (_forSaleSign != null)
+            {
+                _forSaleSign.SetActive(_currentOwner == Owner.None);
+            }
+
+            // Update ownership flag
+            bool showFlag = _currentOwner != Owner.None;
+            if (_ownershipFlag != null)
+            {
+                _ownershipFlag.SetActive(showFlag);
+            }
+
+            // Update flag color based on owner
+            if (_flagRenderer != null && showFlag)
+            {
+                Color flagColor = _currentOwner == Owner.Player ? _playerOwnedColor : _rivalOwnedColor;
+                _flagRenderer.material.color = flagColor;
+            }
+
+            // Update owner-specific icons
+            if (_playerIcon != null)
+            {
+                _playerIcon.SetActive(_currentOwner == Owner.Player);
+            }
+            if (_rivalIcon != null)
+            {
+                _rivalIcon.SetActive(_currentOwner == Owner.Rival);
+            }
+        }
+
+        private void UpdateRivalTargetVisual()
+        {
+            if (_rivalTargetEffect != null)
+            {
+                // Only show target effect on available (unowned) lots
+                bool shouldShow = _isRivalTarget && _currentOwner == Owner.None;
+                _rivalTargetEffect.SetActive(shouldShow);
+
+                if (shouldShow)
+                {
+                    _targetPulseTimer = 0f;
+                }
+            }
         }
 
         private void UpdateOutline()

@@ -122,3 +122,31 @@ If a feature does not support these outcomes, it should be excluded.
 - Build one system at a time
 - Keep changes small and reviewable
 - Optimize for learning clarity, not content volume
+
+---
+
+## 9. Known Issues & Deprecation Fixes
+
+### 9.1 Namespace Conflicts
+| Issue | Fix | Rationale |
+|-------|-----|-----------|
+| `FortuneValley.Camera` conflicts with `UnityEngine.Camera` | Renamed to `FortuneValley.CameraControl` | Unity types take precedence |
+
+**Prevention Rule**: Never create namespaces matching Unity type names (Camera, Input, UI, Physics, etc.)
+
+### 9.2 Input System Migration
+- Project uses **New Input System** exclusively
+- `InputSystemFixer.cs` auto-replaces deprecated `StandaloneInputModule` with `InputSystemUIInputModule`
+- Use `Mouse.current`, `Keyboard.current`, `Touchscreen.current` - not legacy `Input` class
+
+### 9.3 Modern Unity APIs
+| Deprecated | Use Instead |
+|------------|-------------|
+| `FindObjectOfType<T>()` | `FindFirstObjectByType<T>()` |
+| `FindObjectsOfType<T>()` | `FindObjectsByType<T>(FindObjectsSortMode.None)` |
+
+### 9.4 Full Namespace Qualification
+When inside FortuneValley namespace, use full qualification for ambiguous types:
+```csharp
+private UnityEngine.Camera _camera;  // Good - explicit
+```

@@ -25,11 +25,21 @@ namespace FortuneValley.City
         [Tooltip("The particle system to control")]
         [SerializeField] private ParticleSystem _particleSystem;
 
+        [Header("Enhanced Effects")]
+        [Tooltip("Intensity multiplier for owned lots")]
+        [SerializeField] private float _normalIntensity = 1f;
+        [Tooltip("Intensity multiplier on purchase (brief burst)")]
+        [SerializeField] private float _purchaseBurstIntensity = 3f;
+        [Tooltip("Duration of the purchase burst effect")]
+        [SerializeField] private float _burstDuration = 1f;
+
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
         private Owner _currentOwner = Owner.None;
+        private float _burstTimer;
+        private bool _isBursting;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -49,12 +59,13 @@ namespace FortuneValley.City
         /// </summary>
         public void SetOwner(Owner owner)
         {
-            if (owner == _currentOwner) return;
+            bool isNewOwner = (owner != _currentOwner) && (owner != Owner.None);
             _currentOwner = owner;
 
             if (_particleSystem == null) return;
 
             var main = _particleSystem.main;
+            var emission = _particleSystem.emission;
 
             if (owner == Owner.None)
             {
@@ -68,6 +79,56 @@ namespace FortuneValley.City
                 if (!_particleSystem.isPlaying)
                 {
                     _particleSystem.Play();
+                }
+
+                // If this is a new purchase, trigger burst effect
+                if (isNewOwner)
+                {
+                    TriggerPurchaseBurst();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Trigger an intensified burst effect (on purchase).
+        /// </summary>
+        public void TriggerPurchaseBurst()
+        {
+            _isBursting = true;
+            _burstTimer = 0f;
+
+            if (_particleSystem != null)
+            {
+                var emission = _particleSystem.emission;
+                emission.rateOverTimeMultiplier = _purchaseBurstIntensity;
+
+                // Emit a burst of particles
+                _particleSystem.Emit(20);
+            }
+        }
+
+        private void Update()
+        {
+            if (!_isBursting) return;
+
+            _burstTimer += Time.deltaTime;
+            float progress = _burstTimer / _burstDuration;
+
+            if (_particleSystem != null)
+            {
+                var emission = _particleSystem.emission;
+
+                if (progress >= 1f)
+                {
+                    // Burst complete, return to normal
+                    emission.rateOverTimeMultiplier = _normalIntensity;
+                    _isBursting = false;
+                }
+                else
+                {
+                    // Gradually reduce intensity
+                    float intensity = Mathf.Lerp(_purchaseBurstIntensity, _normalIntensity, progress);
+                    emission.rateOverTimeMultiplier = intensity;
                 }
             }
         }

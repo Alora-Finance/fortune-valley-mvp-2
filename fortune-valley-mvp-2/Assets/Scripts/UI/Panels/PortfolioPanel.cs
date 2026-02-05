@@ -47,11 +47,20 @@ namespace FortuneValley.UI.Panels
         [SerializeField] private Color _gainColor = new Color(0.2f, 0.8f, 0.2f);
         [SerializeField] private Color _lossColor = new Color(0.8f, 0.2f, 0.2f);
 
+        [Header("Value Animation")]
+        [SerializeField] private float _valueAnimationDuration = 0.5f;
+        [SerializeField] private AnimationCurve _animationCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
         private List<InvestmentListItem> _holdingItems = new List<InvestmentListItem>();
+        private float _displayedTotalValue;
+        private float _targetTotalValue;
+        private float _valueAnimationTimer;
+        private bool _isAnimatingValue;
+        private float _previousTotalValue;
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -127,7 +136,31 @@ namespace FortuneValley.UI.Panels
 
         private void OnInvestmentCompounded(ActiveInvestment inv)
         {
-            if (IsVisible) RefreshDisplay();
+            if (IsVisible)
+            {
+                RefreshDisplay();
+                // Animate the value change to make compound interest visible
+                AnimateValueChange();
+            }
+        }
+
+        private void Update()
+        {
+            // Animate portfolio value counting up/down
+            if (_isAnimatingValue)
+            {
+                _valueAnimationTimer += Time.deltaTime;
+                float progress = Mathf.Clamp01(_valueAnimationTimer / _valueAnimationDuration);
+                float curveProgress = _animationCurve.Evaluate(progress);
+
+                _displayedTotalValue = Mathf.Lerp(_previousTotalValue, _targetTotalValue, curveProgress);
+                UpdateTotalValueDisplay(_displayedTotalValue);
+
+                if (progress >= 1f)
+                {
+                    _isAnimatingValue = false;
+                }
+            }
         }
 
         private void OnBalanceChanged(float balance, float delta)
@@ -164,10 +197,14 @@ namespace FortuneValley.UI.Panels
             float totalPrincipal = _investmentSystem.TotalPrincipal;
             float percentReturn = totalPrincipal > 0 ? (totalGain / totalPrincipal) * 100f : 0f;
 
-            // Total value
-            if (_totalValueText != null)
+            // Store target for animation
+            _targetTotalValue = totalValue;
+
+            // Total value (will be animated in Update)
+            if (!_isAnimatingValue)
             {
-                _totalValueText.text = $"Portfolio Value: ${totalValue:N2}";
+                UpdateTotalValueDisplay(totalValue);
+                _displayedTotalValue = totalValue;
             }
 
             // Total gain/loss
@@ -177,6 +214,40 @@ namespace FortuneValley.UI.Panels
                 _totalGainText.text = $"Total Return: {prefix}${totalGain:N2} ({prefix}{percentReturn:F1}%)";
                 _totalGainText.color = totalGain >= 0 ? _gainColor : _lossColor;
             }
+        }
+
+        private void UpdateTotalValueDisplay(float value)
+        {
+            if (_totalValueText != null)
+            {
+                _totalValueText.text = $"Portfolio Value: ${value:N2}";
+
+                // Color based on gain/loss from principal
+                if (_investmentSystem != null)
+                {
+                    float totalPrincipal = _investmentSystem.TotalPrincipal;
+                    if (value > totalPrincipal)
+                    {
+                        _totalValueText.color = _gainColor;
+                    }
+                    else if (value < totalPrincipal)
+                    {
+                        _totalValueText.color = _lossColor;
+                    }
+                    else
+                    {
+                        _totalValueText.color = Color.white;
+                    }
+                }
+            }
+        }
+
+        private void AnimateValueChange()
+        {
+            // Start animating from current displayed value to new target
+            _previousTotalValue = _displayedTotalValue;
+            _valueAnimationTimer = 0f;
+            _isAnimatingValue = true;
         }
 
         private void UpdateBalanceDisplay()

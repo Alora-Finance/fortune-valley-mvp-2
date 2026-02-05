@@ -193,16 +193,102 @@ namespace FortuneValley.Core
 
         private void HandleGameEnd(Owner winner)
         {
-            SetState(winner == Owner.Player ? GameState.Won : GameState.Lost);
+            bool isPlayerWin = winner == Owner.Player;
+            SetState(isPlayerWin ? GameState.Won : GameState.Lost);
+
+            // Build game summary for end screen
+            GameSummary summary = BuildGameSummary(isPlayerWin);
+
+            // Raise the detailed game end event for the end screen
+            GameEvents.RaiseGameEndWithSummary(isPlayerWin, summary);
 
             if (_logStateChanges)
             {
-                string resultText = winner == Owner.Player
+                string resultText = isPlayerWin
                     ? "Congratulations! You won!"
                     : "Game over. The rival won.";
 
                 Debug.Log($"[GameManager] {resultText}");
                 Debug.Log(GetGameSummary());
+            }
+        }
+
+        /// <summary>
+        /// Build a complete game summary for the end screen.
+        /// </summary>
+        private GameSummary BuildGameSummary(bool isPlayerWin)
+        {
+            var summary = new GameSummary();
+
+            // Time data
+            summary.DaysPlayed = _timeManager != null ? _timeManager.CurrentTick : 0;
+
+            // Ownership data
+            if (_cityManager != null)
+            {
+                summary.PlayerLots = _cityManager.PlayerLotCount;
+                summary.RivalLots = _cityManager.RivalLotCount;
+                summary.TotalLots = _cityManager.TotalLots;
+            }
+
+            // Financial data
+            if (_currencyManager != null)
+            {
+                summary.FinalNetWorth = _currencyManager.CheckingBalance + _currencyManager.InvestingBalance;
+            }
+
+            if (_investmentSystem != null)
+            {
+                summary.TotalInvestmentGains = _investmentSystem.TotalGain;
+                summary.FinalNetWorth += _investmentSystem.TotalPortfolioValue;
+                summary.InvestmentCount = _investmentSystem.ActiveInvestments.Count;
+                summary.PeakPortfolioValue = _investmentSystem.TotalPortfolioValue; // simplified
+            }
+
+            if (_restaurantSystem != null)
+            {
+                summary.TotalRestaurantIncome = _restaurantSystem.TotalEarned;
+            }
+
+            // Add key decision notes based on outcomes
+            AddKeyDecisionNotes(summary, isPlayerWin);
+
+            return summary;
+        }
+
+        /// <summary>
+        /// Add learning-focused notes about key decisions.
+        /// </summary>
+        private void AddKeyDecisionNotes(GameSummary summary, bool isPlayerWin)
+        {
+            // Investment-related decisions
+            if (summary.TotalInvestmentGains > 500)
+            {
+                summary.AddKeyDecision("Investment gains significantly helped your victory!");
+            }
+            else if (summary.TotalInvestmentGains > 100)
+            {
+                summary.AddKeyDecision("Compound interest contributed to your success.");
+            }
+            else if (summary.InvestmentCount == 0)
+            {
+                summary.AddKeyDecision("You didn't use investments - compound interest could have helped!");
+            }
+
+            // Speed of acquisition
+            if (isPlayerWin && summary.DaysPlayed < 100)
+            {
+                summary.AddKeyDecision("Fast victory! Efficient use of resources.");
+            }
+            else if (!isPlayerWin && summary.DaysPlayed > 200)
+            {
+                summary.AddKeyDecision("The rival outpaced you over time.");
+            }
+
+            // Lot ownership patterns
+            if (summary.PlayerLots > 0 && summary.RivalLots > summary.PlayerLots)
+            {
+                summary.AddKeyDecision("The rival bought lots faster than you.");
             }
         }
 

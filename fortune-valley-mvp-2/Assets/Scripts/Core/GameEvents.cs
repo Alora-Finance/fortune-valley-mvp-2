@@ -57,6 +57,12 @@ namespace FortuneValley.Core
         /// </summary>
         public static event Action<float, string> OnIncomeGenerated;
 
+        /// <summary>
+        /// Fired when income is generated with world position (for visual feedback).
+        /// Parameters: amount, world position of income source
+        /// </summary>
+        public static event Action<float, Vector3> OnIncomeGeneratedWithPosition;
+
         // ═══════════════════════════════════════════════════════════════
         // INVESTMENT EVENTS
         // ═══════════════════════════════════════════════════════════════
@@ -94,6 +100,18 @@ namespace FortuneValley.Core
         /// </summary>
         public static event Action<string> OnRivalTargetingLot;
 
+        /// <summary>
+        /// Fired when rival's target changes (with days until purchase).
+        /// Parameters: lot ID, days until rival attempts purchase
+        /// </summary>
+        public static event Action<string, int> OnRivalTargetChanged;
+
+        /// <summary>
+        /// Fired when rival successfully purchases a lot.
+        /// Parameter: lot ID that was purchased
+        /// </summary>
+        public static event Action<string> OnRivalPurchasedLot;
+
         // ═══════════════════════════════════════════════════════════════
         // GAME STATE EVENTS
         // ═══════════════════════════════════════════════════════════════
@@ -103,6 +121,12 @@ namespace FortuneValley.Core
         /// Parameter: the winner (Player or Rival)
         /// </summary>
         public static event Action<Owner> OnGameEnd;
+
+        /// <summary>
+        /// Fired when the game ends with full summary data.
+        /// Parameters: isPlayerWin, summary data for end screen
+        /// </summary>
+        public static event Action<bool, GameSummary> OnGameEndWithSummary;
 
         /// <summary>
         /// Fired when a new game starts.
@@ -130,12 +154,16 @@ namespace FortuneValley.Core
         public static void RaiseInvestingBalanceChanged(float balance, float delta) => OnInvestingBalanceChanged?.Invoke(balance, delta);
         public static void RaiseTransfer(float amount, AccountType from, AccountType to) => OnTransfer?.Invoke(amount, from, to);
         public static void RaiseIncomeGenerated(float amount, string source) => OnIncomeGenerated?.Invoke(amount, source);
+        public static void RaiseIncomeGeneratedWithPosition(float amount, Vector3 position) => OnIncomeGeneratedWithPosition?.Invoke(amount, position);
         public static void RaiseInvestmentCompounded(ActiveInvestment inv) => OnInvestmentCompounded?.Invoke(inv);
         public static void RaiseInvestmentCreated(ActiveInvestment inv) => OnInvestmentCreated?.Invoke(inv);
         public static void RaiseInvestmentWithdrawn(ActiveInvestment inv, float payout) => OnInvestmentWithdrawn?.Invoke(inv, payout);
         public static void RaiseLotPurchased(string lotId, Owner owner) => OnLotPurchased?.Invoke(lotId, owner);
         public static void RaiseRivalTargetingLot(string lotId) => OnRivalTargetingLot?.Invoke(lotId);
+        public static void RaiseRivalTargetChanged(string lotId, int daysUntil) => OnRivalTargetChanged?.Invoke(lotId, daysUntil);
+        public static void RaiseRivalPurchasedLot(string lotId) => OnRivalPurchasedLot?.Invoke(lotId);
         public static void RaiseGameEnd(Owner winner) => OnGameEnd?.Invoke(winner);
+        public static void RaiseGameEndWithSummary(bool isPlayerWin, GameSummary summary) => OnGameEndWithSummary?.Invoke(isPlayerWin, summary);
         public static void RaiseGameStart() => OnGameStart?.Invoke();
         public static void RaiseRestaurantUpgraded(int level) => OnRestaurantUpgraded?.Invoke(level);
 
@@ -155,12 +183,16 @@ namespace FortuneValley.Core
             OnInvestingBalanceChanged = null;
             OnTransfer = null;
             OnIncomeGenerated = null;
+            OnIncomeGeneratedWithPosition = null;
             OnInvestmentCompounded = null;
             OnInvestmentCreated = null;
             OnInvestmentWithdrawn = null;
             OnLotPurchased = null;
             OnRivalTargetingLot = null;
+            OnRivalTargetChanged = null;
+            OnRivalPurchasedLot = null;
             OnGameEnd = null;
+            OnGameEndWithSummary = null;
             OnGameStart = null;
             OnRestaurantUpgraded = null;
         }

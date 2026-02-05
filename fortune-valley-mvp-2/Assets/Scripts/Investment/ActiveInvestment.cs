@@ -76,6 +76,12 @@ namespace FortuneValley.Core
         /// </summary>
         public int CompoundCount { get; private set; }
 
+        /// <summary>
+        /// The gain from the most recent compound event.
+        /// Used for visual feedback (celebration effects).
+        /// </summary>
+        public float LastCompoundGain { get; private set; }
+
         // ═══════════════════════════════════════════════════════════════
         // CONSTRUCTOR
         // ═══════════════════════════════════════════════════════════════
@@ -125,6 +131,9 @@ namespace FortuneValley.Core
                 // Compound!
                 float previousValue = CurrentValue;
                 CurrentValue = CurrentValue * (1f + actualRate);
+
+                // Track the gain from this compound (for visual feedback)
+                LastCompoundGain = CurrentValue - previousValue;
 
                 // Update tracking
                 LastCompoundTick = currentTick;

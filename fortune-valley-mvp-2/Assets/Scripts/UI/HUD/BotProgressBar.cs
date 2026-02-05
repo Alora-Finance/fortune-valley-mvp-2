@@ -22,6 +22,7 @@ namespace FortuneValley.UI.HUD
         [Header("Labels")]
         [SerializeField] private TextMeshProUGUI _botLotsText;
         [SerializeField] private TextMeshProUGUI _warningText;
+        [SerializeField] private TextMeshProUGUI _rivalLabelText;
 
         [Header("Warning Indicator")]
         [SerializeField] private GameObject _warningIndicator;
@@ -34,6 +35,12 @@ namespace FortuneValley.UI.HUD
 
         [Header("Animation")]
         [SerializeField] private float _warningFlashSpeed = 2f;
+        [SerializeField] private float _pulseSpeed = 3f;
+
+        [Header("Pulse Settings")]
+        [Tooltip("Pulse when rival is close to buying")]
+        [SerializeField] private int _pulseTriggerDays = 5;
+        [SerializeField] private Color _pulseColor = new Color(1f, 0.5f, 0.5f);
 
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
@@ -44,6 +51,8 @@ namespace FortuneValley.UI.HUD
         private string _targetedLotName;
         private bool _isShowingWarning;
         private float _warningFlashTimer;
+        private int _daysUntilPurchase;
+        private bool _isPulsing;
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -53,12 +62,16 @@ namespace FortuneValley.UI.HUD
         {
             GameEvents.OnLotPurchased += HandleLotPurchased;
             GameEvents.OnRivalTargetingLot += HandleRivalTargeting;
+            GameEvents.OnRivalTargetChanged += HandleRivalTargetChanged;
+            GameEvents.OnRivalPurchasedLot += HandleRivalPurchasedLot;
         }
 
         private void OnDisable()
         {
             GameEvents.OnLotPurchased -= HandleLotPurchased;
             GameEvents.OnRivalTargetingLot -= HandleRivalTargeting;
+            GameEvents.OnRivalTargetChanged -= HandleRivalTargetChanged;
+            GameEvents.OnRivalPurchasedLot -= HandleRivalPurchasedLot;
         }
 
         private void Update()
@@ -75,6 +88,14 @@ namespace FortuneValley.UI.HUD
                     color.a = 0.5f + alpha * 0.5f;
                     _warningIcon.color = color;
                 }
+            }
+
+            // Pulse progress bar when rival is close to buying
+            if (_isPulsing && _progressFillImage != null)
+            {
+                _warningFlashTimer += Time.deltaTime * _pulseSpeed;
+                float pulse = (Mathf.Sin(_warningFlashTimer * Mathf.PI) + 1f) / 2f;
+                _progressFillImage.color = Color.Lerp(_highThreatColor, _pulseColor, pulse);
             }
         }
 
@@ -105,6 +126,24 @@ namespace FortuneValley.UI.HUD
         private void HandleRivalTargeting(string lotId)
         {
             ShowWarning(lotId);
+        }
+
+        private void HandleRivalTargetChanged(string lotId, int daysUntil)
+        {
+            _daysUntilPurchase = daysUntil;
+            _isPulsing = daysUntil <= _pulseTriggerDays;
+
+            if (!string.IsNullOrEmpty(lotId))
+            {
+                ShowWarning(lotId);
+            }
+        }
+
+        private void HandleRivalPurchasedLot(string lotId)
+        {
+            // Rival bought a lot - briefly intensify, then hide warning
+            _isPulsing = false;
+            HideWarning();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -182,10 +221,31 @@ namespace FortuneValley.UI.HUD
                 _progressSlider.value = (float)_botLots / _totalLots;
             }
 
-            // Update text
+            // Update text with prominent display
             if (_botLotsText != null)
             {
-                _botLotsText.text = $"Bot: {_botLots}/{_totalLots}";
+                _botLotsText.text = $"Rival: {_botLots}/{_totalLots} lots";
+            }
+
+            // Update label
+            if (_rivalLabelText != null)
+            {
+                float progress = _totalLots > 0 ? (float)_botLots / _totalLots : 0f;
+                if (progress >= 0.66f)
+                {
+                    _rivalLabelText.text = "DANGER!";
+                    _rivalLabelText.color = _highThreatColor;
+                }
+                else if (progress >= 0.33f)
+                {
+                    _rivalLabelText.text = "Warning";
+                    _rivalLabelText.color = _mediumThreatColor;
+                }
+                else
+                {
+                    _rivalLabelText.text = "Rival Progress";
+                    _rivalLabelText.color = _lowThreatColor;
+                }
             }
 
             // Update color based on threat level
