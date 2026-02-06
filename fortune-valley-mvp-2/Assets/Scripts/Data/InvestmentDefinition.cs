@@ -28,6 +28,10 @@ namespace FortuneValley.Core
         // FINANCIAL PARAMETERS
         // ═══════════════════════════════════════════════════════════════
 
+        [Header("Category")]
+        [Tooltip("Investment category for grouping (Stock, ETF, Bond, TBill)")]
+        [SerializeField] private InvestmentCategory _category = InvestmentCategory.Stock;
+
         [Header("Financial Settings")]
         [Tooltip("Low = stable, Medium = some variance, High = volatile")]
         [SerializeField] private RiskLevel _riskLevel = RiskLevel.Low;
@@ -67,6 +71,12 @@ namespace FortuneValley.Core
 
         public string DisplayName => _displayName;
         public string Description => _description;
+        public InvestmentCategory Category => _category;
+
+        /// <summary>
+        /// Bonds and T-Bills have fixed (predictable) returns, unlike stocks/ETFs.
+        /// </summary>
+        public bool HasFixedReturn => _category == InvestmentCategory.Bond || _category == InvestmentCategory.TBill;
         public RiskLevel RiskLevel => _riskLevel;
         public float AnnualReturnRate => _annualReturnRate;
         public Vector2 VolatilityRange => _volatilityRange;

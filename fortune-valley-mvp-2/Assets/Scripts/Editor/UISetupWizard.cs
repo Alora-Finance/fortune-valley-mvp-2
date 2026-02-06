@@ -144,6 +144,8 @@ namespace FortuneValley.Editor
             // Create list item prefabs
             CreateInvestmentListItemPrefab(prefabPath);
             CreateLotListItemPrefab(prefabPath);
+            CreateInvestmentRowPrefab(prefabPath);
+            CreateSectionHeaderPrefab(prefabPath);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -502,52 +504,342 @@ namespace FortuneValley.Editor
             GameObject panel = CreatePanelBase(parent, "PortfolioPanel", "Investment Portfolio");
             PortfolioPanel portfolioPanel = panel.AddComponent<PortfolioPanel>();
 
-            // Content area
             Transform content = panel.transform.Find("Content");
 
-            // Summary section
-            GameObject summary = new GameObject("Summary");
-            summary.transform.SetParent(content, false);
+            // ── Summary row (4 stats across the top) ──
+            GameObject summaryRow = new GameObject("SummaryRow");
+            summaryRow.transform.SetParent(content, false);
 
-            VerticalLayoutGroup summaryLayout = summary.AddComponent<VerticalLayoutGroup>();
-            summaryLayout.spacing = 5;
-            summaryLayout.childControlHeight = true;
+            HorizontalLayoutGroup summaryLayout = summaryRow.AddComponent<HorizontalLayoutGroup>();
+            summaryLayout.spacing = 15;
             summaryLayout.childControlWidth = true;
+            summaryLayout.childControlHeight = true;
+            summaryLayout.childForceExpandWidth = true;
 
-            var totalValueText = CreateText(summary.transform, "TotalValueText", "Portfolio Value: $0.00", 24, TMPro.TextAlignmentOptions.Left);
-            var totalGainText = CreateText(summary.transform, "TotalGainText", "Total Return: +$0.00 (+0.0%)", 18, TMPro.TextAlignmentOptions.Left);
-            var investingBalanceText = CreateText(summary.transform, "InvestingBalanceText", "Investing Balance: $0.00", 16, TMPro.TextAlignmentOptions.Left);
+            var summaryLayoutElem = summaryRow.AddComponent<LayoutElement>();
+            summaryLayoutElem.preferredHeight = 40;
 
-            // Spacer
-            CreateSpacer(content, 20);
+            var totalValueText = CreateText(summaryRow.transform, "TotalValueText", "Portfolio: $0", 16, TMPro.TextAlignmentOptions.Center);
+            totalValueText.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+            var totalGainText = CreateText(summaryRow.transform, "TotalGainText", "Gain: +$0", 16, TMPro.TextAlignmentOptions.Center);
+            var balanceText = CreateText(summaryRow.transform, "BalanceText", "Cash: $0", 16, TMPro.TextAlignmentOptions.Center);
+            var netWorthText = CreateText(summaryRow.transform, "NetWorthText", "Net Worth: $0", 16, TMPro.TextAlignmentOptions.Center);
+            netWorthText.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
 
-            // Holdings section
-            var holdingsLabel = CreateText(content, "HoldingsLabel", "Your Holdings", 18, TMPro.TextAlignmentOptions.Left);
-            holdingsLabel.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+            CreateSpacer(content, 5);
 
-            // Holdings container (scrollable)
-            GameObject holdingsScroll = CreateScrollView(content, "HoldingsScroll", 300);
-            Transform holdingsContainer = holdingsScroll.transform.Find("Viewport/Content");
+            // ── Main body (graph left, investments right) ──
+            GameObject mainBody = new GameObject("MainBody");
+            mainBody.transform.SetParent(content, false);
 
-            // Empty text
-            var emptyText = CreateText(holdingsContainer, "EmptyText", "No investments yet. Buy some to get started!", 14, TMPro.TextAlignmentOptions.Center);
+            HorizontalLayoutGroup mainLayout = mainBody.AddComponent<HorizontalLayoutGroup>();
+            mainLayout.spacing = 15;
+            mainLayout.childControlWidth = false;
+            mainLayout.childControlHeight = true;
+            mainLayout.childForceExpandWidth = false;
+            mainLayout.childForceExpandHeight = true;
 
-            // Buy button
-            CreateSpacer(content, 10);
-            var buyButton = CreateButton(content, "BuyNewButton", "Buy New Investment", 200, 40);
+            var mainLayoutElem = mainBody.AddComponent<LayoutElement>();
+            mainLayoutElem.flexibleHeight = 1;
 
-            // Wire up references
+            // ── Left side: Graph area (~35%) ──
+            GameObject graphArea = new GameObject("GraphArea");
+            graphArea.transform.SetParent(mainBody.transform, false);
+
+            var graphAreaLayout = graphArea.AddComponent<LayoutElement>();
+            graphAreaLayout.preferredWidth = 420;
+            graphAreaLayout.flexibleHeight = 1;
+
+            VerticalLayoutGroup graphVLayout = graphArea.AddComponent<VerticalLayoutGroup>();
+            graphVLayout.spacing = 5;
+            graphVLayout.childControlWidth = true;
+            graphVLayout.childControlHeight = false;
+            graphVLayout.childForceExpandWidth = true;
+
+            var graphLabel = CreateText(graphArea.transform, "GraphLabel", "Performance", 14, TMPro.TextAlignmentOptions.Left);
+            graphLabel.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+
+            // RawImage for graph
+            GameObject graphImageGO = new GameObject("GraphImage");
+            graphImageGO.transform.SetParent(graphArea.transform, false);
+
+            RectTransform graphRect = graphImageGO.AddComponent<RectTransform>();
+            graphRect.sizeDelta = new Vector2(400, 200);
+
+            RawImage graphRawImage = graphImageGO.AddComponent<RawImage>();
+            graphRawImage.color = Color.white;
+
+            var graphImgLayout = graphImageGO.AddComponent<LayoutElement>();
+            graphImgLayout.preferredHeight = 200;
+            graphImgLayout.flexibleWidth = 1;
+
+            // Add PortfolioLineGraph component
+            PortfolioLineGraph lineGraph = graphImageGO.AddComponent<PortfolioLineGraph>();
+            SerializedObject lineGraphSO = new SerializedObject(lineGraph);
+            lineGraphSO.FindProperty("_graphImage").objectReferenceValue = graphRawImage;
+            lineGraphSO.ApplyModifiedProperties();
+
+            // Legend
+            GameObject legend = new GameObject("Legend");
+            legend.transform.SetParent(graphArea.transform, false);
+
+            HorizontalLayoutGroup legendLayout = legend.AddComponent<HorizontalLayoutGroup>();
+            legendLayout.spacing = 20;
+            legendLayout.childControlWidth = false;
+            legendLayout.childControlHeight = true;
+
+            var wealthLegend = CreateText(legend.transform, "WealthLegend", "--- Total Wealth", 11, TMPro.TextAlignmentOptions.Left);
+            wealthLegend.GetComponent<TMPro.TextMeshProUGUI>().color = new Color(0.2f, 0.8f, 0.4f);
+
+            var gainLegend = CreateText(legend.transform, "GainLegend", "--- Net Gain", 11, TMPro.TextAlignmentOptions.Left);
+            gainLegend.GetComponent<TMPro.TextMeshProUGUI>().color = new Color(0.9f, 0.8f, 0.2f);
+
+            // ── Right side: Investment list (~65%) ──
+            GameObject listArea = new GameObject("ListArea");
+            listArea.transform.SetParent(mainBody.transform, false);
+
+            var listAreaLayout = listArea.AddComponent<LayoutElement>();
+            listAreaLayout.flexibleWidth = 1;
+            listAreaLayout.flexibleHeight = 1;
+
+            VerticalLayoutGroup listVLayout = listArea.AddComponent<VerticalLayoutGroup>();
+            listVLayout.spacing = 0;
+            listVLayout.childControlWidth = true;
+            listVLayout.childControlHeight = true;
+            listVLayout.childForceExpandWidth = true;
+            listVLayout.childForceExpandHeight = true;
+
+            var investmentsLabel = CreateText(listArea.transform, "InvestmentsLabel", "Investments", 14, TMPro.TextAlignmentOptions.Left);
+            investmentsLabel.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+            var investLabelLayout = investmentsLabel.AddComponent<LayoutElement>();
+            investLabelLayout.preferredHeight = 22;
+
+            // Scrollable investment list
+            GameObject investScroll = CreateScrollView(listArea.transform, "InvestmentScroll", 400);
+            Transform investContainer = investScroll.transform.Find("Viewport/Content");
+
+            // ── Create prefabs for InvestmentRow and SectionHeader ──
+            string prefabPath = "Assets/Prefabs/UI";
+            EnsurePrefabFolder(prefabPath);
+
+            GameObject investmentRowPrefab = CreateInvestmentRowPrefab(prefabPath);
+            GameObject sectionHeaderPrefab = CreateSectionHeaderPrefab(prefabPath);
+
+            // ── Wire up all references ──
             SerializedObject so = new SerializedObject(portfolioPanel);
             so.FindProperty("_totalValueText").objectReferenceValue = totalValueText.GetComponent<TMPro.TextMeshProUGUI>();
             so.FindProperty("_totalGainText").objectReferenceValue = totalGainText.GetComponent<TMPro.TextMeshProUGUI>();
-            so.FindProperty("_investingBalanceText").objectReferenceValue = investingBalanceText.GetComponent<TMPro.TextMeshProUGUI>();
-            so.FindProperty("_holdingsContainer").objectReferenceValue = holdingsContainer;
-            so.FindProperty("_emptyPortfolioText").objectReferenceValue = emptyText.GetComponent<TMPro.TextMeshProUGUI>();
-            so.FindProperty("_buyNewInvestmentButton").objectReferenceValue = buyButton.GetComponent<Button>();
+            so.FindProperty("_balanceText").objectReferenceValue = balanceText.GetComponent<TMPro.TextMeshProUGUI>();
+            so.FindProperty("_netWorthText").objectReferenceValue = netWorthText.GetComponent<TMPro.TextMeshProUGUI>();
+            so.FindProperty("_lineGraph").objectReferenceValue = lineGraph;
+            so.FindProperty("_investmentListContainer").objectReferenceValue = investContainer;
+            so.FindProperty("_investmentRowPrefab").objectReferenceValue = investmentRowPrefab != null ? investmentRowPrefab.GetComponent<InvestmentRow>() : null;
+            so.FindProperty("_sectionHeaderPrefab").objectReferenceValue = sectionHeaderPrefab;
             so.FindProperty("_closeButton").objectReferenceValue = panel.transform.Find("Header/CloseButton")?.GetComponent<Button>();
             so.ApplyModifiedProperties();
 
             return panel;
+        }
+
+        private static void EnsurePrefabFolder(string prefabPath)
+        {
+            if (!AssetDatabase.IsValidFolder(prefabPath))
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
+                    AssetDatabase.CreateFolder("Assets", "Prefabs");
+                AssetDatabase.CreateFolder("Assets/Prefabs", "UI");
+            }
+        }
+
+        /// <summary>
+        /// Creates the InvestmentRow prefab with inline buy/sell buttons.
+        /// </summary>
+        private static GameObject CreateInvestmentRowPrefab(string prefabPath)
+        {
+            GameObject row = new GameObject("InvestmentRow");
+
+            RectTransform rect = row.AddComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(0, 50);
+
+            Image bg = row.AddComponent<Image>();
+            bg.color = new Color(0.15f, 0.15f, 0.2f, 0.6f);
+
+            HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(8, 8, 4, 4);
+            layout.spacing = 6;
+            layout.childControlWidth = false;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+
+            var rowLayoutElem = row.AddComponent<LayoutElement>();
+            rowLayoutElem.preferredHeight = 50;
+
+            // Risk dot
+            GameObject riskDot = new GameObject("RiskDot");
+            riskDot.transform.SetParent(row.transform, false);
+            RectTransform riskRect = riskDot.AddComponent<RectTransform>();
+            riskRect.sizeDelta = new Vector2(8, 8);
+            Image riskImg = riskDot.AddComponent<Image>();
+            riskImg.color = Color.yellow;
+            var riskLayout = riskDot.AddComponent<LayoutElement>();
+            riskLayout.preferredWidth = 8;
+
+            // Name
+            var nameText = CreateText(row.transform, "NameText", "Investment", 12, TMPro.TextAlignmentOptions.Left);
+            nameText.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+            var nameLayout = nameText.AddComponent<LayoutElement>();
+            nameLayout.preferredWidth = 130;
+
+            // Price
+            var priceText = CreateText(row.transform, "PriceText", "$0.00", 11, TMPro.TextAlignmentOptions.Right);
+            var priceLayout = priceText.AddComponent<LayoutElement>();
+            priceLayout.preferredWidth = 60;
+
+            // Shares
+            var sharesText = CreateText(row.transform, "SharesText", "0", 11, TMPro.TextAlignmentOptions.Center);
+            var sharesLayout = sharesText.AddComponent<LayoutElement>();
+            sharesLayout.preferredWidth = 35;
+
+            // Value
+            var valueText = CreateText(row.transform, "ValueText", "-", 11, TMPro.TextAlignmentOptions.Right);
+            var valueLayout = valueText.AddComponent<LayoutElement>();
+            valueLayout.preferredWidth = 65;
+
+            // Gain
+            var gainText = CreateText(row.transform, "GainText", "-", 11, TMPro.TextAlignmentOptions.Right);
+            gainText.GetComponent<TMPro.TextMeshProUGUI>().color = ACCENT_COLOR;
+            var gainLayout = gainText.AddComponent<LayoutElement>();
+            gainLayout.preferredWidth = 85;
+
+            // Fixed return text (hidden by default)
+            var fixedReturnText = CreateText(row.transform, "FixedReturnText", "5.0% APY", 10, TMPro.TextAlignmentOptions.Center);
+            fixedReturnText.GetComponent<TMPro.TextMeshProUGUI>().color = new Color(0.5f, 0.8f, 1f);
+            var fixedReturnLayout = fixedReturnText.AddComponent<LayoutElement>();
+            fixedReturnLayout.preferredWidth = 55;
+            fixedReturnText.SetActive(false);
+
+            // Buy buttons container
+            GameObject buyContainer = new GameObject("BuyButtons");
+            buyContainer.transform.SetParent(row.transform, false);
+
+            HorizontalLayoutGroup buyLayout = buyContainer.AddComponent<HorizontalLayoutGroup>();
+            buyLayout.spacing = 2;
+            buyLayout.childControlWidth = false;
+            buyLayout.childControlHeight = true;
+            buyLayout.childAlignment = TextAnchor.MiddleCenter;
+
+            var buyContainerLayout = buyContainer.AddComponent<LayoutElement>();
+            buyContainerLayout.preferredWidth = 140;
+
+            var buy1Btn = CreateSmallButton(buyContainer.transform, "Buy1", "+1");
+            var buy5Btn = CreateSmallButton(buyContainer.transform, "Buy5", "+5");
+            var buy50Btn = CreateSmallButton(buyContainer.transform, "Buy50", "+50");
+            var buyMaxBtn = CreateSmallButton(buyContainer.transform, "BuyMax", "Max");
+
+            // Sell buttons container
+            GameObject sellContainer = new GameObject("SellButtons");
+            sellContainer.transform.SetParent(row.transform, false);
+
+            HorizontalLayoutGroup sellLayout = sellContainer.AddComponent<HorizontalLayoutGroup>();
+            sellLayout.spacing = 2;
+            sellLayout.childControlWidth = false;
+            sellLayout.childControlHeight = true;
+            sellLayout.childAlignment = TextAnchor.MiddleCenter;
+
+            var sellContainerLayout = sellContainer.AddComponent<LayoutElement>();
+            sellContainerLayout.preferredWidth = 140;
+
+            var sell1Btn = CreateSmallButton(sellContainer.transform, "Sell1", "-1");
+            var sell5Btn = CreateSmallButton(sellContainer.transform, "Sell5", "-5");
+            var sell50Btn = CreateSmallButton(sellContainer.transform, "Sell50", "-50");
+            var sellAllBtn = CreateSmallButton(sellContainer.transform, "SellAll", "All");
+
+            // Color sell buttons red-ish
+            Color sellBtnColor = new Color(0.35f, 0.2f, 0.2f);
+            SetButtonColor(sell1Btn, sellBtnColor);
+            SetButtonColor(sell5Btn, sellBtnColor);
+            SetButtonColor(sell50Btn, sellBtnColor);
+            SetButtonColor(sellAllBtn, sellBtnColor);
+
+            // Add InvestmentRow component
+            InvestmentRow investmentRow = row.AddComponent<InvestmentRow>();
+            SerializedObject rowSO = new SerializedObject(investmentRow);
+            rowSO.FindProperty("_nameText").objectReferenceValue = nameText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_priceText").objectReferenceValue = priceText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_sharesText").objectReferenceValue = sharesText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_valueText").objectReferenceValue = valueText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_gainText").objectReferenceValue = gainText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_fixedReturnText").objectReferenceValue = fixedReturnText.GetComponent<TMPro.TextMeshProUGUI>();
+            rowSO.FindProperty("_riskDot").objectReferenceValue = riskImg;
+            rowSO.FindProperty("_buy1Button").objectReferenceValue = buy1Btn.GetComponent<Button>();
+            rowSO.FindProperty("_buy5Button").objectReferenceValue = buy5Btn.GetComponent<Button>();
+            rowSO.FindProperty("_buy50Button").objectReferenceValue = buy50Btn.GetComponent<Button>();
+            rowSO.FindProperty("_buyMaxButton").objectReferenceValue = buyMaxBtn.GetComponent<Button>();
+            rowSO.FindProperty("_sell1Button").objectReferenceValue = sell1Btn.GetComponent<Button>();
+            rowSO.FindProperty("_sell5Button").objectReferenceValue = sell5Btn.GetComponent<Button>();
+            rowSO.FindProperty("_sell50Button").objectReferenceValue = sell50Btn.GetComponent<Button>();
+            rowSO.FindProperty("_sellAllButton").objectReferenceValue = sellAllBtn.GetComponent<Button>();
+            rowSO.FindProperty("_sellButtonsContainer").objectReferenceValue = sellContainer;
+            rowSO.ApplyModifiedProperties();
+
+            // Save prefab
+            string path = $"{prefabPath}/InvestmentRow.prefab";
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(row, path);
+            DestroyImmediate(row);
+
+            Debug.Log($"[UISetupWizard] Created prefab: {path}");
+            return prefab;
+        }
+
+        /// <summary>
+        /// Creates a simple section header prefab (bold label).
+        /// </summary>
+        private static GameObject CreateSectionHeaderPrefab(string prefabPath)
+        {
+            GameObject header = new GameObject("SectionHeader");
+
+            RectTransform rect = header.AddComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(0, 28);
+
+            Image bg = header.AddComponent<Image>();
+            bg.color = new Color(0.12f, 0.12f, 0.18f, 0.8f);
+
+            var layoutElem = header.AddComponent<LayoutElement>();
+            layoutElem.preferredHeight = 28;
+
+            HorizontalLayoutGroup hlayout = header.AddComponent<HorizontalLayoutGroup>();
+            hlayout.padding = new RectOffset(10, 10, 4, 4);
+            hlayout.childControlWidth = true;
+            hlayout.childControlHeight = true;
+            hlayout.childForceExpandWidth = true;
+
+            var labelText = CreateText(header.transform, "Label", "Category", 14, TMPro.TextAlignmentOptions.Left);
+            labelText.GetComponent<TMPro.TextMeshProUGUI>().fontStyle = TMPro.FontStyles.Bold;
+            labelText.GetComponent<TMPro.TextMeshProUGUI>().color = new Color(0.6f, 0.75f, 1f);
+
+            // Save prefab
+            string path = $"{prefabPath}/SectionHeader.prefab";
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(header, path);
+            DestroyImmediate(header);
+
+            Debug.Log($"[UISetupWizard] Created prefab: {path}");
+            return prefab;
+        }
+
+        private static void SetButtonColor(GameObject btnGO, Color color)
+        {
+            Image img = btnGO.GetComponent<Image>();
+            if (img != null) img.color = color;
+
+            Button btn = btnGO.GetComponent<Button>();
+            if (btn != null)
+            {
+                ColorBlock cb = btn.colors;
+                cb.normalColor = color;
+                cb.highlightedColor = color * 1.2f;
+                cb.pressedColor = color * 0.8f;
+                btn.colors = cb;
+            }
         }
 
         private static GameObject CreateLotsPanel(Transform parent)

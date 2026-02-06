@@ -41,15 +41,14 @@ namespace FortuneValley.UI.HUD
 
         private void OnEnable()
         {
-            // Subscribe to balance events
             GameEvents.OnCheckingBalanceChanged += HandleCheckingChanged;
-            GameEvents.OnInvestingBalanceChanged += HandleInvestingChanged;
+            GameEvents.OnGameStart += HandleGameStart;
         }
 
         private void OnDisable()
         {
             GameEvents.OnCheckingBalanceChanged -= HandleCheckingChanged;
-            GameEvents.OnInvestingBalanceChanged -= HandleInvestingChanged;
+            GameEvents.OnGameStart -= HandleGameStart;
         }
 
         private void Start()
@@ -92,11 +91,27 @@ namespace FortuneValley.UI.HUD
             }
         }
 
-        private void HandleInvestingChanged(float balance, float delta)
+        private void HandleGameStart()
         {
+            // Hide the investing display — show a single unified "Balance" label
             if (_investingDisplay != null)
             {
-                _investingDisplay.UpdateBalance(balance, delta);
+                _investingDisplay.gameObject.SetActive(false);
+            }
+
+            if (_checkingDisplay != null)
+            {
+                _checkingDisplay.SetLabel("Balance");
+            }
+
+            // Initialize rival progress bar with real data from CityManager
+            if (_botProgressBar != null)
+            {
+                var cityManager = FindFirstObjectByType<CityManager>();
+                if (cityManager != null)
+                {
+                    _botProgressBar.Initialize(cityManager.TotalLots, cityManager.RivalLotCount);
+                }
             }
         }
 

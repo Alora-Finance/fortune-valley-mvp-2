@@ -62,7 +62,7 @@ namespace FortuneValley.UI
 
             if (_purchasePopup == null)
             {
-                _purchasePopup = FindFirstObjectByType<LotPurchasePopup>();
+                _purchasePopup = FindFirstObjectByType<LotPurchasePopup>(FindObjectsInactive.Include);
             }
 
             if (_cityManager == null)
@@ -253,7 +253,8 @@ namespace FortuneValley.UI
         {
             if (_purchasePopup != null)
             {
-                _purchasePopup.ShowForLot(lot, _currentTick);
+                // Pass lot world position so popup appears near the clicked lot
+                _purchasePopup.ShowForLot(lot, _currentTick, _selectedLot.transform.position);
             }
             else
             {

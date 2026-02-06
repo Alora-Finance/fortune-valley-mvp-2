@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: GrowthETF
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Growth ETF (VUG)
-  _description: Focuses on fast-growing companies. Higher returns but more ups and downs than the S&P 500.
+  _displayName: Growth ETF (QQQ)
+  _description: Focuses on fast-growing tech companies. Higher returns but more ups
+    and downs than the S&P 500.
+  _category: 1
   _riskLevel: 1
   _annualReturnRate: 0.12
   _volatilityRange: {x: 0.80, y: 1.20}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 100
+  _basePricePerShare: 45

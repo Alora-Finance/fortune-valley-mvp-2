@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: ElectricVehicles
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Electric Vehicles (TSLA)
-  _description: High-profile EV company. Huge growth potential but extremely volatile - you could double your money or lose half.
+  _displayName: EV Motors (TSLA)
+  _description: High-profile EV company. Huge growth potential but extremely volatile
+    - you could double your money or lose half.
+  _category: 0
   _riskLevel: 2
-  _annualReturnRate: 0.25
+  _annualReturnRate: 0.18
   _volatilityRange: {x: 0.50, y: 1.50}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 50
+  _basePricePerShare: 200

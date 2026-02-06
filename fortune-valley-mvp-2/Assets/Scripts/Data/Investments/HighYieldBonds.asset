@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: HighYieldBonds
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: High-Yield Bonds
-  _description: Riskier company bonds that pay higher interest. Better returns than safe bonds but companies could default.
+  _displayName: High-Yield Bond (HYG)
+  _description: Riskier company bonds that pay higher interest. Better returns than
+    safe bonds but companies could default.
+  _category: 2
   _riskLevel: 1
-  _annualReturnRate: 0.06
+  _annualReturnRate: 0.07
   _volatilityRange: {x: 0.90, y: 1.10}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 100
+  _basePricePerShare: 80

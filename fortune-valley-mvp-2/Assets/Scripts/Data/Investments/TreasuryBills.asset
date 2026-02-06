@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: TreasuryBills
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Treasury Bills (T-Bills)
-  _description: Short-term government bonds. Extremely safe but lowest returns. Great for preserving capital.
+  _displayName: Treasury Bill (BIL)
+  _description: Short-term government bonds. Extremely safe but lowest returns. Great
+    for preserving capital.
+  _category: 3
   _riskLevel: 0
   _annualReturnRate: 0.04
   _volatilityRange: {x: 0.98, y: 1.02}

@@ -49,6 +49,7 @@ namespace FortuneValley.UI.HUD
         private bool _isPulsing;
         private Vector3 _originalScale;
         private Color _originalBalanceColor;
+        private string _customLabel;
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -56,8 +57,8 @@ namespace FortuneValley.UI.HUD
 
         private void Start()
         {
-            // Set label based on account type
-            if (_labelText != null)
+            // Set label based on account type (unless overridden)
+            if (_labelText != null && string.IsNullOrEmpty(_customLabel))
             {
                 _labelText.text = _accountType == AccountType.Checking ? "Checking" : "Investing";
             }
@@ -126,6 +127,15 @@ namespace FortuneValley.UI.HUD
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC METHODS
         // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Override the default label text.
+        /// </summary>
+        public void SetLabel(string label)
+        {
+            _customLabel = label;
+            if (_labelText != null) _labelText.text = label;
+        }
 
         /// <summary>
         /// Update the displayed balance.

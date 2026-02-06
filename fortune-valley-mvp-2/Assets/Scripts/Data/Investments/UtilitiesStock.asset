@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
-  m_Name: TechStock
+  m_Name: UtilitiesStock
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Tech Corp (AAPL)
-  _description: A large tech company. Can grow fast but more risky than owning many
-    companies.
+  _displayName: PowerGrid Co (NEE)
+  _description: A utility company providing essential services. Very stable but slow
+    growth. A defensive investment.
   _category: 0
-  _riskLevel: 2
-  _annualReturnRate: 0.15
-  _volatilityRange: {x: 0.75, y: 1.25}
+  _riskLevel: 0
+  _annualReturnRate: 0.05
+  _volatilityRange: {x: 0.92, y: 1.08}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 50
-  _basePricePerShare: 175
+  _basePricePerShare: 75

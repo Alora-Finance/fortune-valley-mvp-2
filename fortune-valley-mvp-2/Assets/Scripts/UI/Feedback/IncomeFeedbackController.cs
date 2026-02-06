@@ -47,8 +47,6 @@ namespace FortuneValley.UI.Feedback
         [Tooltip("Minimum income amount to show feedback for")]
         [SerializeField] private float _minimumAmountToShow = 1f;
 
-        [Tooltip("Delay between coin launch and account pulse")]
-        [SerializeField] private float _coinToPulseDelay = 0.6f;
 
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE

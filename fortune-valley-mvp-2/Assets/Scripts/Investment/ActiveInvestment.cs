@@ -152,6 +152,20 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
+        /// Remove shares from this position (for partial sells).
+        /// Returns the actual number of shares removed (capped at owned).
+        /// </summary>
+        public int RemoveShares(int count)
+        {
+            if (count <= 0)
+                return 0;
+
+            int actual = Mathf.Min(count, NumberOfShares);
+            NumberOfShares -= actual;
+            return actual;
+        }
+
+        /// <summary>
         /// Called each tick to update time held.
         /// </summary>
         public void IncrementTicksHeld()

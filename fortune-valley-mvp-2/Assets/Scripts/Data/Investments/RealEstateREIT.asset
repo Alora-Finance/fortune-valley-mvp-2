@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: RealEstateREIT
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Real Estate (VNQ)
-  _description: Owns real estate properties. Provides income and growth, but sensitive to interest rates.
+  _displayName: UrbanRealty (O)
+  _description: Owns real estate properties. Provides income and growth, but sensitive
+    to interest rates.
+  _category: 0
   _riskLevel: 1
-  _annualReturnRate: 0.09
+  _annualReturnRate: 0.08
   _volatilityRange: {x: 0.82, y: 1.18}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 100
+  _basePricePerShare: 60

@@ -12,12 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
   m_Name: BiotechStock
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Biotech Stock (MRNA)
-  _description: A single biotech company. Can skyrocket on drug approvals or crash on failures. Very high risk.
+  _displayName: BioMed Inc (MRNA)
+  _description: A single biotech company. Can skyrocket on drug approvals or crash
+    on failures. Very high risk.
+  _category: 0
   _riskLevel: 2
-  _annualReturnRate: 0.25
+  _annualReturnRate: 0.12
   _volatilityRange: {x: 0.5, y: 1.5}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 25
-  _basePricePerShare: 40
+  _basePricePerShare: 120

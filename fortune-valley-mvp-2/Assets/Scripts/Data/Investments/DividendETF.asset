@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: DividendETF
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
   _displayName: Dividend ETF (VYM)
-  _description: Companies that pay regular dividends. Stable income with lower volatility than growth stocks.
+  _description: Companies that pay regular dividends. Stable income with lower volatility
+    than growth stocks.
+  _category: 1
   _riskLevel: 0
-  _annualReturnRate: 0.08
+  _annualReturnRate: 0.06
   _volatilityRange: {x: 0.88, y: 1.12}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 100
+  _basePricePerShare: 35

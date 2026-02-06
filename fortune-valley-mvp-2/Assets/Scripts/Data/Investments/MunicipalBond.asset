@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 188c7fb39d40940fcbee47e11e84a3a5, type: 3}
-  m_Name: TechStock
+  m_Name: MunicipalBond
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.InvestmentDefinition
-  _displayName: Tech Corp (AAPL)
-  _description: A large tech company. Can grow fast but more risky than owning many
-    companies.
-  _category: 0
-  _riskLevel: 2
-  _annualReturnRate: 0.15
-  _volatilityRange: {x: 0.75, y: 1.25}
+  _displayName: Municipal Bond (MUB)
+  _description: Bonds issued by local governments. Very safe with tax advantages.
+    Lower returns but nearly guaranteed income.
+  _category: 2
+  _riskLevel: 0
+  _annualReturnRate: 0.035
+  _volatilityRange: {x: 0.97, y: 1.03}
   _compoundingFrequency: 30
   _compoundsPerYear: 12
   _minimumDeposit: 50
-  _basePricePerShare: 175
+  _basePricePerShare: 100

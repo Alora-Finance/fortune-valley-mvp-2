@@ -119,6 +119,7 @@ namespace FortuneValley.Core
             }
 
             GameEvents.RaiseCurrencyChanged(_balance, amount);
+            GameEvents.RaiseCheckingBalanceChanged(_balance, amount);
             GameEvents.RaiseIncomeGenerated(amount, source);
         }
 
@@ -159,6 +160,7 @@ namespace FortuneValley.Core
             }
 
             GameEvents.RaiseCurrencyChanged(_balance, -amount);
+            GameEvents.RaiseCheckingBalanceChanged(_balance, -amount);
             return true;
         }
 
@@ -219,6 +221,7 @@ namespace FortuneValley.Core
             float delta = amount - _balance;
             _balance = amount;
             GameEvents.RaiseCurrencyChanged(_balance, delta);
+            GameEvents.RaiseCheckingBalanceChanged(_balance, delta);
         }
 
         /// <summary>

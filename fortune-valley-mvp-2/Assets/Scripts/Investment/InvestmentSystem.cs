@@ -208,6 +208,34 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
+        /// Sell a specific number of shares from an investment (partial sell).
+        /// Removes the investment entirely if all shares are sold.
+        /// </summary>
+        /// <param name="investment">The investment to sell from</param>
+        /// <param name="shareCount">Number of shares to sell</param>
+        /// <returns>Amount received, or 0 if failed</returns>
+        public float SellShares(ActiveInvestment investment, int shareCount)
+        {
+            if (shareCount <= 0 || !_activeInvestments.Contains(investment))
+                return 0f;
+
+            // Sell all if requested amount >= owned
+            if (shareCount >= investment.NumberOfShares)
+                return SellAllShares(investment);
+
+            float pricePerShare = investment.Definition.CurrentPrice;
+            int removed = investment.RemoveShares(shareCount);
+            float payout = removed * pricePerShare;
+
+            _currencyManager.Add(payout, $"Sold {removed} shares of {investment.Definition.DisplayName}");
+
+            Debug.Log($"[InvestmentSystem] Partial sell: {removed} shares of {investment.Definition.DisplayName}. " +
+                     $"Payout: ${payout:F2}. Remaining: {investment.NumberOfShares} shares");
+
+            return payout;
+        }
+
+        /// <summary>
         /// Sell all shares of an investment (cash out).
         /// </summary>
         /// <param name="investment">The investment to sell</param>
