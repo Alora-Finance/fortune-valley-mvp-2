@@ -63,6 +63,12 @@ namespace FortuneValley.Core
         /// </summary>
         public static event Action<float, Vector3> OnIncomeGeneratedWithPosition;
 
+        /// <summary>
+        /// Fired when rival earns income, with world position for floating text.
+        /// Parameters: amount, world position above rival restaurant
+        /// </summary>
+        public static event Action<float, Vector3> OnRivalIncomeGeneratedWithPosition;
+
         // ═══════════════════════════════════════════════════════════════
         // INVESTMENT EVENTS
         // ═══════════════════════════════════════════════════════════════
@@ -112,6 +118,12 @@ namespace FortuneValley.Core
         /// </summary>
         public static event Action<string> OnRivalPurchasedLot;
 
+        /// <summary>
+        /// Fired when rival's money changes (for balance display).
+        /// Parameter: new rival balance
+        /// </summary>
+        public static event Action<float> OnRivalBalanceChanged;
+
         // ═══════════════════════════════════════════════════════════════
         // GAME STATE EVENTS
         // ═══════════════════════════════════════════════════════════════
@@ -155,6 +167,7 @@ namespace FortuneValley.Core
         public static void RaiseTransfer(float amount, AccountType from, AccountType to) => OnTransfer?.Invoke(amount, from, to);
         public static void RaiseIncomeGenerated(float amount, string source) => OnIncomeGenerated?.Invoke(amount, source);
         public static void RaiseIncomeGeneratedWithPosition(float amount, Vector3 position) => OnIncomeGeneratedWithPosition?.Invoke(amount, position);
+        public static void RaiseRivalIncomeWithPosition(float amount, Vector3 position) => OnRivalIncomeGeneratedWithPosition?.Invoke(amount, position);
         public static void RaiseInvestmentCompounded(ActiveInvestment inv) => OnInvestmentCompounded?.Invoke(inv);
         public static void RaiseInvestmentCreated(ActiveInvestment inv) => OnInvestmentCreated?.Invoke(inv);
         public static void RaiseInvestmentWithdrawn(ActiveInvestment inv, float payout) => OnInvestmentWithdrawn?.Invoke(inv, payout);
@@ -162,6 +175,7 @@ namespace FortuneValley.Core
         public static void RaiseRivalTargetingLot(string lotId) => OnRivalTargetingLot?.Invoke(lotId);
         public static void RaiseRivalTargetChanged(string lotId, int daysUntil) => OnRivalTargetChanged?.Invoke(lotId, daysUntil);
         public static void RaiseRivalPurchasedLot(string lotId) => OnRivalPurchasedLot?.Invoke(lotId);
+        public static void RaiseRivalBalanceChanged(float balance) => OnRivalBalanceChanged?.Invoke(balance);
         public static void RaiseGameEnd(Owner winner) => OnGameEnd?.Invoke(winner);
         public static void RaiseGameEndWithSummary(bool isPlayerWin, GameSummary summary) => OnGameEndWithSummary?.Invoke(isPlayerWin, summary);
         public static void RaiseGameStart() => OnGameStart?.Invoke();
@@ -184,6 +198,7 @@ namespace FortuneValley.Core
             OnTransfer = null;
             OnIncomeGenerated = null;
             OnIncomeGeneratedWithPosition = null;
+            OnRivalIncomeGeneratedWithPosition = null;
             OnInvestmentCompounded = null;
             OnInvestmentCreated = null;
             OnInvestmentWithdrawn = null;
@@ -191,6 +206,7 @@ namespace FortuneValley.Core
             OnRivalTargetingLot = null;
             OnRivalTargetChanged = null;
             OnRivalPurchasedLot = null;
+            OnRivalBalanceChanged = null;
             OnGameEnd = null;
             OnGameEndWithSummary = null;
             OnGameStart = null;

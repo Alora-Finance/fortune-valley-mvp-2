@@ -24,6 +24,16 @@ namespace FortuneValley.Core
         [Tooltip("Reference to currency manager for income deposits")]
         [SerializeField] private CurrencyManager _currencyManager;
 
+        [Tooltip("Reference to city manager for lot income bonuses")]
+        [SerializeField] private CityManager _cityManager;
+
+        [Header("Building Reference")]
+        [Tooltip("The restaurant building in the scene (for positioning feedback above the rooftop)")]
+        [SerializeField] private Transform _restaurantBuilding;
+
+        [Tooltip("Extra height above rooftop to spawn floating text")]
+        [SerializeField] private float _spawnHeightOffset = 0.5f;
+
         [Header("Debug")]
         [SerializeField] private bool _logIncome = false;
 
@@ -33,6 +43,7 @@ namespace FortuneValley.Core
 
         private int _currentLevel = 1;
         private float _totalEarned = 0f;
+        private Renderer _buildingRenderer;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -66,6 +77,15 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════
+
+        private void Awake()
+        {
+            // Cache renderer for rooftop height calculation
+            if (_restaurantBuilding != null)
+            {
+                _buildingRenderer = _restaurantBuilding.GetComponent<Renderer>();
+            }
+        }
 
         private void OnEnable()
         {
@@ -150,16 +170,32 @@ namespace FortuneValley.Core
 
         private void GenerateIncome()
         {
-            float income = IncomePerTick;
+            // Combine base restaurant income with lot ownership bonuses
+            float baseIncome = IncomePerTick;
+            float lotBonus = _cityManager != null ? _cityManager.PlayerLotIncomeBonus : 0f;
+            float income = baseIncome + lotBonus;
+
             _totalEarned += income;
             _currencyManager.Add(income, "Restaurant");
 
-            // Raise event for visual feedback system (floating text, coin animation)
-            GameEvents.RaiseIncomeGeneratedWithPosition(income, transform.position);
+            // Compute spawn position above the restaurant rooftop
+            Vector3 spawnPos = transform.position; // fallback to GameManager origin
+            if (_restaurantBuilding != null)
+            {
+                float rooftopY = _buildingRenderer != null
+                    ? _buildingRenderer.bounds.max.y
+                    : _restaurantBuilding.position.y;
+                spawnPos = new Vector3(
+                    _restaurantBuilding.position.x,
+                    rooftopY + _spawnHeightOffset,
+                    _restaurantBuilding.position.z);
+            }
+
+            GameEvents.RaiseIncomeGeneratedWithPosition(income, spawnPos);
 
             if (_logIncome)
             {
-                Debug.Log($"[RestaurantSystem] Generated ${income:F2}. Total: ${_totalEarned:F2}");
+                Debug.Log($"[RestaurantSystem] Generated ${income:F2} (base: ${baseIncome:F2} + lots: ${lotBonus:F2}). Total: ${_totalEarned:F2}");
             }
         }
     }

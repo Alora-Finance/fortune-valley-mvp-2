@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RivalConfig
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.RivalConfig
   _startingMoney: 500
-  _incomePerTick: 8
+  _incomePerTick: 12
   _purchaseInterval: 60
   _warningTicks: 30
   _purchaseBuffer: 100

@@ -24,6 +24,10 @@ namespace FortuneValley.Core
         [SerializeField] private RivalConfig _config;
         [SerializeField] private CityManager _cityManager;
 
+        [Header("Building Reference")]
+        [SerializeField] private Transform _rivalBuilding;
+        [SerializeField] private float _spawnHeightOffset = 0.5f;
+
         [Header("Debug")]
         [SerializeField] private bool _logBehavior = false;
 
@@ -35,6 +39,7 @@ namespace FortuneValley.Core
         private int _lastPurchaseTick = 0;
         private string _targetedLotId = null;
         private int _warningIssuedTick = -1;
+        private Renderer _buildingRenderer;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -59,6 +64,14 @@ namespace FortuneValley.Core
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════
 
+        private void Awake()
+        {
+            if (_rivalBuilding != null)
+            {
+                _buildingRenderer = _rivalBuilding.GetComponent<Renderer>();
+            }
+        }
+
         private void OnEnable()
         {
             GameEvents.OnTick += HandleTick;
@@ -76,6 +89,7 @@ namespace FortuneValley.Core
         private void HandleGameStart()
         {
             _money = _config.StartingMoney;
+            GameEvents.RaiseRivalBalanceChanged(_money);
             _lastPurchaseTick = 0;
             _targetedLotId = null;
             _warningIssuedTick = -1;
@@ -121,8 +135,25 @@ namespace FortuneValley.Core
 
         private void HandleTick(int tickNumber)
         {
-            // Earn income each tick
-            _money += _config.IncomePerTick;
+            // Earn base income + bonus from owned lots
+            float lotBonus = _cityManager != null ? _cityManager.RivalLotIncomeBonus : 0f;
+            float totalIncome = _config.IncomePerTick + lotBonus;
+            _money += totalIncome;
+            GameEvents.RaiseRivalBalanceChanged(_money);
+
+            // Show floating income text above rival restaurant
+            Vector3 spawnPos = transform.position;
+            if (_rivalBuilding != null)
+            {
+                float rooftopY = _buildingRenderer != null
+                    ? _buildingRenderer.bounds.max.y
+                    : _rivalBuilding.position.y;
+                spawnPos = new Vector3(
+                    _rivalBuilding.position.x,
+                    rooftopY + _spawnHeightOffset,
+                    _rivalBuilding.position.z);
+            }
+            GameEvents.RaiseRivalIncomeWithPosition(totalIncome, spawnPos);
 
             // Calculate ticks until next purchase attempt
             int purchaseInterval = GetCurrentPurchaseInterval();
@@ -200,6 +231,7 @@ namespace FortuneValley.Core
 
             // Spend money and purchase
             _money -= cost;
+            GameEvents.RaiseRivalBalanceChanged(_money);
             _cityManager.RivalPurchaseLot(lotToBuy, tickNumber);
 
             // Raise event for UI feedback (overlay, etc.)

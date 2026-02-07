@@ -82,6 +82,25 @@ namespace FortuneValley.Core
             }
         }
 
+        /// <summary>
+        /// Total income bonus from rival-owned lots per tick.
+        /// </summary>
+        public float RivalLotIncomeBonus
+        {
+            get
+            {
+                float total = 0f;
+                foreach (var lot in _allLots)
+                {
+                    if (GetOwner(lot.LotId) == Owner.Rival)
+                    {
+                        total += lot.IncomeBonus;
+                    }
+                }
+                return total;
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════
@@ -105,12 +124,7 @@ namespace FortuneValley.Core
 
         private void HandleTick(int tickNumber)
         {
-            // Generate income from owned lots
-            float bonus = PlayerLotIncomeBonus;
-            if (bonus > 0)
-            {
-                _currencyManager.Add(bonus, "Lot income");
-            }
+            // Lot income is now handled by RestaurantSystem to unify floating text
         }
 
         // ═══════════════════════════════════════════════════════════════

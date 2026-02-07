@@ -7,7 +7,7 @@ namespace FortuneValley.UI.Feedback
 {
     /// <summary>
     /// Orchestrates the income visual feedback system.
-    /// When income is generated: FloatingText -> CoinFly -> AccountPulse
+    /// When income is generated: FloatingText -> AccountPulse
     ///
     /// LEARNING DESIGN: This creates a satisfying feedback loop that makes
     /// earning money feel rewarding. Students should feel good about income,
@@ -21,27 +21,17 @@ namespace FortuneValley.UI.Feedback
 
         [Header("Pool Sizes")]
         [SerializeField] private int _floatingTextPoolSize = 10;
-        [SerializeField] private int _coinPoolSize = 5;
 
         [Header("Prefabs")]
         [Tooltip("Prefab for floating text (must have FloatingText component)")]
         [SerializeField] private FloatingText _floatingTextPrefab;
 
-        [Tooltip("Prefab for flying coin (must have CoinFlyAnimation component)")]
-        [SerializeField] private CoinFlyAnimation _coinPrefab;
-
         [Header("References")]
-        [Tooltip("The canvas to spawn feedback UI on")]
-        [SerializeField] private Canvas _feedbackCanvas;
-
         [Tooltip("The world-space canvas for 3D floating text")]
         [SerializeField] private Canvas _worldCanvas;
 
         [Tooltip("The checking account display to pulse")]
         [SerializeField] private AccountDisplay _checkingDisplay;
-
-        [Tooltip("Camera for world-to-screen conversion")]
-        [SerializeField] private UnityEngine.Camera _mainCamera;
 
         [Header("Settings")]
         [Tooltip("Minimum income amount to show feedback for")]
@@ -53,7 +43,6 @@ namespace FortuneValley.UI.Feedback
         // ═══════════════════════════════════════════════════════════════
 
         private List<FloatingText> _floatingTextPool = new List<FloatingText>();
-        private List<CoinFlyAnimation> _coinPool = new List<CoinFlyAnimation>();
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -68,11 +57,13 @@ namespace FortuneValley.UI.Feedback
         private void OnEnable()
         {
             GameEvents.OnIncomeGeneratedWithPosition += HandleIncomeWithPosition;
+            GameEvents.OnRivalIncomeGeneratedWithPosition += HandleRivalIncomeWithPosition;
         }
 
         private void OnDisable()
         {
             GameEvents.OnIncomeGeneratedWithPosition -= HandleIncomeWithPosition;
+            GameEvents.OnRivalIncomeGeneratedWithPosition -= HandleRivalIncomeWithPosition;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -81,11 +72,6 @@ namespace FortuneValley.UI.Feedback
 
         private void FindReferences()
         {
-            if (_mainCamera == null)
-            {
-                _mainCamera = UnityEngine.Camera.main;
-            }
-
             if (_checkingDisplay == null)
             {
                 // Find checking account display in scene
@@ -95,20 +81,6 @@ namespace FortuneValley.UI.Feedback
                     if (display.AccountType == AccountType.Checking)
                     {
                         _checkingDisplay = display;
-                        break;
-                    }
-                }
-            }
-
-            if (_feedbackCanvas == null)
-            {
-                // Try to find a suitable canvas
-                var canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
-                foreach (var canvas in canvases)
-                {
-                    if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                    {
-                        _feedbackCanvas = canvas;
                         break;
                     }
                 }
@@ -127,17 +99,6 @@ namespace FortuneValley.UI.Feedback
                     _floatingTextPool.Add(text);
                 }
             }
-
-            // Create coin pool
-            if (_coinPrefab != null && _feedbackCanvas != null)
-            {
-                for (int i = 0; i < _coinPoolSize; i++)
-                {
-                    var coin = Instantiate(_coinPrefab, _feedbackCanvas.transform);
-                    coin.gameObject.SetActive(false);
-                    _coinPool.Add(coin);
-                }
-            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -151,8 +112,20 @@ namespace FortuneValley.UI.Feedback
             // Step 1: Show floating text at world position
             ShowFloatingText(amount, worldPosition);
 
-            // Step 2: Launch coin animation (with small delay)
-            Invoke(nameof(LaunchCoinToAccount), 0.2f);
+            // Step 2: Pulse the account display after a short delay
+            Invoke(nameof(PulseAccount), 0.5f);
+        }
+
+        private void HandleRivalIncomeWithPosition(float amount, Vector3 worldPosition)
+        {
+            if (amount < _minimumAmountToShow) return;
+
+            // Show red floating text for rival income (no account pulse)
+            var text = GetFloatingTextFromPool();
+            if (text == null) return;
+
+            string message = $"+${amount:N0}";
+            text.Show(message, worldPosition, new Color(0.9f, 0.2f, 0.2f));
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -172,37 +145,10 @@ namespace FortuneValley.UI.Feedback
         }
 
         /// <summary>
-        /// Launch a coin to fly to the checking account display.
+        /// Pulse the checking account display to draw attention.
         /// </summary>
-        private void LaunchCoinToAccount()
+        private void PulseAccount()
         {
-            if (_mainCamera == null || _checkingDisplay == null) return;
-
-            var coin = GetCoinFromPool();
-            if (coin == null) return;
-
-            // Get restaurant position (assuming it's the player's restaurant)
-            Vector3 restaurantWorldPos = Vector3.zero;
-            var restaurant = FindFirstObjectByType<RestaurantSystem>();
-            if (restaurant != null)
-            {
-                restaurantWorldPos = restaurant.transform.position;
-            }
-
-            // Convert to screen position
-            Vector3 startScreen = _mainCamera.WorldToScreenPoint(restaurantWorldPos);
-            Vector2 startPos = new Vector2(startScreen.x, startScreen.y);
-
-            // Get checking display screen position
-            Vector2 endPos = GetAccountDisplayScreenPosition();
-
-            // Launch coin with callback to pulse account
-            coin.Fly(startPos, endPos, OnCoinArrived);
-        }
-
-        private void OnCoinArrived()
-        {
-            // Step 3: Pulse the checking account
             if (_checkingDisplay != null)
             {
                 _checkingDisplay.PulseOnIncome();
@@ -232,48 +178,6 @@ namespace FortuneValley.UI.Feedback
             }
 
             return null;
-        }
-
-        private CoinFlyAnimation GetCoinFromPool()
-        {
-            foreach (var coin in _coinPool)
-            {
-                if (!coin.IsAnimating)
-                {
-                    return coin;
-                }
-            }
-
-            // Pool exhausted - expand if we have a prefab
-            if (_coinPrefab != null && _feedbackCanvas != null)
-            {
-                var coin = Instantiate(_coinPrefab, _feedbackCanvas.transform);
-                _coinPool.Add(coin);
-                return coin;
-            }
-
-            return null;
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // HELPER METHODS
-        // ═══════════════════════════════════════════════════════════════
-
-        private Vector2 GetAccountDisplayScreenPosition()
-        {
-            if (_checkingDisplay == null) return new Vector2(Screen.width * 0.5f, Screen.height * 0.9f);
-
-            var rectTransform = _checkingDisplay.GetComponent<RectTransform>();
-            if (rectTransform != null)
-            {
-                Vector3[] corners = new Vector3[4];
-                rectTransform.GetWorldCorners(corners);
-                // Return center of the rect
-                Vector3 center = (corners[0] + corners[2]) / 2f;
-                return new Vector2(center.x, center.y);
-            }
-
-            return new Vector2(Screen.width * 0.5f, Screen.height * 0.9f);
         }
 
         // ═══════════════════════════════════════════════════════════════

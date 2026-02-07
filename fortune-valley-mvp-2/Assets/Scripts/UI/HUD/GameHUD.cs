@@ -41,13 +41,11 @@ namespace FortuneValley.UI.HUD
 
         private void OnEnable()
         {
-            GameEvents.OnCheckingBalanceChanged += HandleCheckingChanged;
             GameEvents.OnGameStart += HandleGameStart;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnCheckingBalanceChanged -= HandleCheckingChanged;
             GameEvents.OnGameStart -= HandleGameStart;
         }
 
@@ -82,14 +80,6 @@ namespace FortuneValley.UI.HUD
         // ═══════════════════════════════════════════════════════════════
         // EVENT HANDLERS
         // ═══════════════════════════════════════════════════════════════
-
-        private void HandleCheckingChanged(float balance, float delta)
-        {
-            if (_checkingDisplay != null)
-            {
-                _checkingDisplay.UpdateBalance(balance, delta);
-            }
-        }
 
         private void HandleGameStart()
         {

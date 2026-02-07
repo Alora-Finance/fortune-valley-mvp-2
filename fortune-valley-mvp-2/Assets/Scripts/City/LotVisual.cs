@@ -30,8 +30,8 @@ namespace FortuneValley.UI
         [SerializeField] private Renderer _ownerIndicator;
 
         [Header("Colors")]
-        [SerializeField] private Color _availableColor = new Color(0.2f, 0.8f, 0.2f, 0.5f);
-        [SerializeField] private Color _playerOwnedColor = new Color(0.2f, 0.4f, 0.9f, 0.8f);
+        [SerializeField] private Color _availableColor = new Color(1f, 1f, 1f, 0.5f);
+        [SerializeField] private Color _playerOwnedColor = new Color(0.1f, 0.9f, 0.2f, 0.8f);
         [SerializeField] private Color _rivalOwnedColor = new Color(0.9f, 0.2f, 0.2f, 0.8f);
         [SerializeField] private Color _hoverColor = new Color(1f, 0.9f, 0.3f, 0.6f);
         [SerializeField] private Color _selectedColor = new Color(1f, 1f, 0f, 0.8f);
@@ -39,10 +39,6 @@ namespace FortuneValley.UI
         [Header("Materials")]
         [Tooltip("Material to use when hovered")]
         [SerializeField] private Material _hoverMaterial;
-
-        [Header("Ownership Particles")]
-        [Tooltip("Particle system for ownership visual feedback")]
-        [SerializeField] private OwnershipParticles _ownershipParticles;
 
         [Header("Rival Targeting")]
         [Tooltip("Visual effect when rival is targeting this lot")]
@@ -77,6 +73,7 @@ namespace FortuneValley.UI
         private Owner _currentOwner = Owner.None;
         private float _targetPulseTimer;
         private int _daysUntilRivalPurchase;
+        private LotEdgeGlow _edgeGlow;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -94,10 +91,23 @@ namespace FortuneValley.UI
 
         private void Awake()
         {
+            // Auto-wire renderer if not assigned in Inspector
+            if (_mainRenderer == null)
+            {
+                _mainRenderer = GetComponent<MeshRenderer>();
+            }
+
             // Cache original material
             if (_mainRenderer != null)
             {
                 _originalMaterial = _mainRenderer.material;
+            }
+
+            // Auto-add edge glow if not already present
+            _edgeGlow = GetComponent<LotEdgeGlow>();
+            if (_edgeGlow == null)
+            {
+                _edgeGlow = gameObject.AddComponent<LotEdgeGlow>();
             }
 
             // Hide outline initially
@@ -185,9 +195,6 @@ namespace FortuneValley.UI
                 _currentOwner = owner;
                 _isRivalTarget = false; // No longer a target once purchased
                 UpdateVisuals();
-
-                // Update ownership particles
-                _ownershipParticles?.SetOwner(owner);
             }
         }
 
@@ -326,6 +333,12 @@ namespace FortuneValley.UI
             if (_outlineEffect != null)
             {
                 _outlineEffect.SetActive(_isSelected || _isHovered);
+            }
+
+            // Propagate ownership state to the edge glow
+            if (_edgeGlow != null)
+            {
+                _edgeGlow.SetOwnershipColor(_currentOwner);
             }
         }
 
