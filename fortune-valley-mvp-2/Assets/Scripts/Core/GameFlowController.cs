@@ -1,0 +1,104 @@
+using UnityEngine;
+using FortuneValley.UI.Panels;
+
+namespace FortuneValley.Core
+{
+    /// <summary>
+    /// Coordinates the full game flow: Title -> Rules -> Play -> Game Over -> Title.
+    /// Thin orchestrator — each panel manages its own content.
+    /// </summary>
+    public class GameFlowController : MonoBehaviour
+    {
+        [Header("Panels")]
+        [SerializeField] private TitleScreenPanel _titleScreen;
+        [SerializeField] private RulesCarouselPanel _rulesCarousel;
+
+        [Header("HUD")]
+        [SerializeField] private GameObject _topFrame;
+        [SerializeField] private GameObject _bottomFrame;
+
+        [Header("Game")]
+        [SerializeField] private GameManager _gameManager;
+
+        private void OnEnable()
+        {
+            if (_titleScreen != null)
+                _titleScreen.OnStartRequested += HandleStartRequested;
+            if (_rulesCarousel != null)
+                _rulesCarousel.OnCarouselComplete += HandleCarouselComplete;
+
+            GameEvents.OnGameEndWithSummary += HandleGameEnd;
+        }
+
+        private void OnDisable()
+        {
+            if (_titleScreen != null)
+                _titleScreen.OnStartRequested -= HandleStartRequested;
+            if (_rulesCarousel != null)
+                _rulesCarousel.OnCarouselComplete -= HandleCarouselComplete;
+
+            GameEvents.OnGameEndWithSummary -= HandleGameEnd;
+        }
+
+        private void Start()
+        {
+            ShowTitleScreen();
+        }
+
+        /// <summary>
+        /// Show the title screen and hide everything else.
+        /// </summary>
+        public void ShowTitleScreen()
+        {
+            // Hide HUD
+            SetHUDVisible(false);
+
+            // Hide gameplay panels
+            if (_rulesCarousel != null)
+                _rulesCarousel.Hide();
+
+            // Return game state to NotStarted (no OnGameStart fired)
+            if (_gameManager != null)
+                _gameManager.ReturnToTitle();
+
+            // Show title
+            if (_titleScreen != null)
+                _titleScreen.Show();
+        }
+
+        private void HandleStartRequested()
+        {
+            // Title -> Rules
+            if (_titleScreen != null)
+                _titleScreen.Hide();
+            if (_rulesCarousel != null)
+                _rulesCarousel.Show();
+        }
+
+        private void HandleCarouselComplete()
+        {
+            // Rules -> Gameplay
+            if (_rulesCarousel != null)
+                _rulesCarousel.Hide();
+
+            SetHUDVisible(true);
+
+            if (_gameManager != null)
+                _gameManager.StartGame();
+        }
+
+        private void HandleGameEnd(bool isPlayerWin, GameSummary summary)
+        {
+            // HUD stays visible during game over so player can see final stats.
+            // GameEndPanel shows itself via its own event subscription.
+        }
+
+        private void SetHUDVisible(bool visible)
+        {
+            if (_topFrame != null)
+                _topFrame.SetActive(visible);
+            if (_bottomFrame != null)
+                _bottomFrame.SetActive(visible);
+        }
+    }
+}

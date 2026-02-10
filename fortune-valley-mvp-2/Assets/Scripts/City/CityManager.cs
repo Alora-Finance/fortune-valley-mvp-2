@@ -246,6 +246,15 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
+        /// Get the tick (day) a lot was purchased, or -1 if not purchased.
+        /// Used by LearningReflectionBuilder for end-game insights.
+        /// </summary>
+        public int GetPurchaseTick(string lotId)
+        {
+            return _purchaseTick.TryGetValue(lotId, out int tick) ? tick : -1;
+        }
+
+        /// <summary>
         /// Get game progress (0 to 1) based on lots owned.
         /// </summary>
         public float GetGameProgress()

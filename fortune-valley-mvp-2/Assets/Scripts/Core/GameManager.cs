@@ -26,7 +26,7 @@ namespace FortuneValley.Core
 
         [Header("Auto Start")]
         [Tooltip("Automatically start the game on scene load")]
-        [SerializeField] private bool _autoStart = true;
+        [SerializeField] private bool _autoStart = false;
 
         [Header("Debug")]
         [SerializeField] private bool _logStateChanges = true;
@@ -159,6 +159,21 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
+        /// Return to title screen state without firing OnGameStart.
+        /// Called by GameFlowController when returning to the title screen.
+        /// </summary>
+        public void ReturnToTitle()
+        {
+            SetState(GameState.NotStarted);
+            _timeManager.StopTime();
+
+            if (_logStateChanges)
+            {
+                Debug.Log("[GameManager] Returned to title screen");
+            }
+        }
+
+        /// <summary>
         /// Toggle pause state.
         /// </summary>
         public void TogglePause()
@@ -229,6 +244,26 @@ namespace FortuneValley.Core
                 summary.PlayerLots = _cityManager.PlayerLotCount;
                 summary.RivalLots = _cityManager.RivalLotCount;
                 summary.TotalLots = _cityManager.TotalLots;
+
+                // Build lot purchase records for reflection
+                float totalSpent = 0f;
+                foreach (var lot in _cityManager.AllLots)
+                {
+                    if (_cityManager.GetOwner(lot.LotId) == Owner.Player)
+                    {
+                        int purchaseTick = _cityManager.GetPurchaseTick(lot.LotId);
+                        summary.LotPurchases.Add(new LotPurchaseRecord
+                        {
+                            LotId = lot.LotId,
+                            LotName = lot.DisplayName,
+                            Cost = lot.BaseCost,
+                            IncomeBonus = lot.IncomeBonus,
+                            PurchasedOnDay = purchaseTick
+                        });
+                        totalSpent += lot.BaseCost;
+                    }
+                }
+                summary.TotalSpentOnLots = totalSpent;
             }
 
             // Financial data
@@ -252,6 +287,12 @@ namespace FortuneValley.Core
 
             // Add key decision notes based on outcomes
             AddKeyDecisionNotes(summary, isPlayerWin);
+
+            // Populate learning reflections
+            summary.Headline = LearningReflectionBuilder.BuildHeadline(isPlayerWin, summary);
+            summary.InvestmentInsight = LearningReflectionBuilder.BuildInvestmentInsight(summary);
+            summary.OpportunityCostInsight = LearningReflectionBuilder.BuildOpportunityCostInsight(summary);
+            summary.WhatIfMessage = LearningReflectionBuilder.BuildWhatIfMessage(isPlayerWin, summary);
 
             return summary;
         }

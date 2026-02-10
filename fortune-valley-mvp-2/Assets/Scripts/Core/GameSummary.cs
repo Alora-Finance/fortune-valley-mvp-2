@@ -82,6 +82,35 @@ namespace FortuneValley.Core
         public float PeakPortfolioValue;
 
         // ═══════════════════════════════════════════════════════════════
+        // LEARNING REFLECTIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Short headline summarizing the outcome (e.g., "Smart Investor!" or "Keep Trying!").
+        /// </summary>
+        public string Headline;
+
+        /// <summary>
+        /// Reflection about the player's investment behavior and compound interest.
+        /// </summary>
+        public string InvestmentInsight;
+
+        /// <summary>
+        /// Reflection about opportunity cost decisions.
+        /// </summary>
+        public string OpportunityCostInsight;
+
+        /// <summary>
+        /// Counterfactual "what if" message to encourage deeper thinking.
+        /// </summary>
+        public string WhatIfMessage;
+
+        /// <summary>
+        /// Record of each lot purchased by the player with timing data.
+        /// </summary>
+        public List<LotPurchaseRecord> LotPurchases = new List<LotPurchaseRecord>();
+
+        // ═══════════════════════════════════════════════════════════════
         // HELPER METHODS
         // ═══════════════════════════════════════════════════════════════
 
@@ -114,5 +143,18 @@ namespace FortuneValley.Core
                 KeyDecisions.Add(decision);
             }
         }
+    }
+
+    /// <summary>
+    /// Records when and why a player purchased a specific lot.
+    /// </summary>
+    [System.Serializable]
+    public struct LotPurchaseRecord
+    {
+        public string LotId;
+        public string LotName;
+        public float Cost;
+        public float IncomeBonus;
+        public int PurchasedOnDay;
     }
 }

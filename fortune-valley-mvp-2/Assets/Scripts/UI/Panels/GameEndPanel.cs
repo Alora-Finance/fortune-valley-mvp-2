@@ -37,6 +37,12 @@ namespace FortuneValley.UI.Panels
         [SerializeField] private Transform _decisionsContainer;
         [SerializeField] private TextMeshProUGUI _decisionItemPrefab;
 
+        [Header("Learning Reflections")]
+        [SerializeField] private TextMeshProUGUI _headlineText;
+        [SerializeField] private TextMeshProUGUI _investmentInsightText;
+        [SerializeField] private TextMeshProUGUI _opportunityCostText;
+        [SerializeField] private TextMeshProUGUI _whatIfText;
+
         [Header("Buttons")]
         [SerializeField] private Button _playAgainButton;
         [SerializeField] private Button _mainMenuButton;
@@ -133,6 +139,7 @@ namespace FortuneValley.UI.Panels
             {
                 DisplayStatistics();
                 DisplayKeyDecisions();
+                DisplayLearningReflections();
             }
         }
 
@@ -217,6 +224,20 @@ namespace FortuneValley.UI.Panels
             }
         }
 
+        private void DisplayLearningReflections()
+        {
+            if (_summary == null) return;
+
+            if (_headlineText != null)
+                _headlineText.text = _summary.Headline ?? "";
+            if (_investmentInsightText != null)
+                _investmentInsightText.text = _summary.InvestmentInsight ?? "";
+            if (_opportunityCostText != null)
+                _opportunityCostText.text = _summary.OpportunityCostInsight ?? "";
+            if (_whatIfText != null)
+                _whatIfText.text = _summary.WhatIfMessage ?? "";
+        }
+
         private void HideStatistics()
         {
             if (_daysPlayedText != null) _daysPlayedText.gameObject.SetActive(false);
@@ -256,18 +277,28 @@ namespace FortuneValley.UI.Panels
         private void OnPlayAgainClicked()
         {
             Hide();
-
-            // Restart the game
-            GameEvents.RaiseGameStart();
+            ReturnToTitle();
         }
 
         private void OnMainMenuClicked()
         {
             Hide();
+            ReturnToTitle();
+        }
 
-            // Load main menu scene (if exists)
-            // For now, just restart
-            GameEvents.RaiseGameStart();
+        private void ReturnToTitle()
+        {
+            // Find GameFlowController and go back to title screen
+            var flowController = FindFirstObjectByType<GameFlowController>();
+            if (flowController != null)
+            {
+                flowController.ShowTitleScreen();
+            }
+            else
+            {
+                // Fallback: just restart directly
+                GameEvents.RaiseGameStart();
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
