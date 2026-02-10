@@ -28,6 +28,9 @@ namespace FortuneValley.UI.Panels
         [SerializeField] private Button _skipButton;
         [SerializeField] private TextMeshProUGUI _nextButtonText;
 
+        [Header("Character Display")]
+        [SerializeField] private GameObject _characterDisplayRig;
+
         /// <summary>
         /// Fired when the player finishes or skips the carousel.
         /// </summary>
@@ -82,6 +85,22 @@ namespace FortuneValley.UI.Panels
         {
             _currentSlide = 0;
             RefreshSlide();
+
+            // Show the 3D character rig and replay the wave animation
+            if (_characterDisplayRig != null)
+            {
+                _characterDisplayRig.SetActive(true);
+                var animator = _characterDisplayRig.GetComponentInChildren<Animator>();
+                if (animator != null)
+                    animator.Play("Wave", 0, 0f);
+            }
+        }
+
+        protected override void OnHide()
+        {
+            // Hide the 3D character rig when carousel closes
+            if (_characterDisplayRig != null)
+                _characterDisplayRig.SetActive(false);
         }
 
         private void GoBack()
