@@ -12,6 +12,7 @@ namespace FortuneValley.Core
         [Header("Panels")]
         [SerializeField] private TitleScreenPanel _titleScreen;
         [SerializeField] private RulesCarouselPanel _rulesCarousel;
+        [SerializeField] private GameEndPanel _gameEndPanel;
 
         [Header("HUD")]
         [SerializeField] private GameObject _topFrame;
@@ -56,6 +57,8 @@ namespace FortuneValley.Core
             // Hide gameplay panels
             if (_rulesCarousel != null)
                 _rulesCarousel.Hide();
+            if (_gameEndPanel != null)
+                _gameEndPanel.gameObject.SetActive(false);
 
             // Return game state to NotStarted (no OnGameStart fired)
             if (_gameManager != null)
@@ -90,7 +93,14 @@ namespace FortuneValley.Core
         private void HandleGameEnd(bool isPlayerWin, GameSummary summary)
         {
             // HUD stays visible during game over so player can see final stats.
-            // GameEndPanel shows itself via its own event subscription.
+            // Activate and show the GameEndPanel directly — it starts inactive
+            // (with a dark overlay Image on its root GO), so we only activate it
+            // when there's actually a game-end event to display.
+            if (_gameEndPanel != null)
+            {
+                _gameEndPanel.gameObject.SetActive(true);
+                _gameEndPanel.ShowWithSummary(isPlayerWin, summary);
+            }
         }
 
         private void SetHUDVisible(bool visible)
