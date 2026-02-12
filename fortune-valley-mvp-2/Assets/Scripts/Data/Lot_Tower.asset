@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Tower
   _displayName: Business Tower
-  _description: 
+  _description: "A towering business complex in the financial district \u2014 the ultimate acquisition."
   _baseCost: 10000
   _incomeBonus: 35
   _gridPosition: {x: 0, y: 0}

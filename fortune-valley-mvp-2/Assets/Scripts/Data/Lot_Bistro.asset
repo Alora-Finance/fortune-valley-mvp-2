@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Bistro
   _displayName: Uptown Bistro
-  _description: 
+  _description: "An upscale bistro in a trendy district \u2014 a solid mid-tier investment."
   _baseCost: 3500
   _incomeBonus: 12
   _gridPosition: {x: 0, y: 0}

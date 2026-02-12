@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Hotel
   _displayName: City Hotel
-  _description: 
+  _description: "A prestigious city hotel site \u2014 expensive, but the highest income in town."
   _baseCost: 6000
   _incomeBonus: 20
   _gridPosition: {x: 0, y: 0}

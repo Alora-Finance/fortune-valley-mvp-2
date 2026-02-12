@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Diner
   _displayName: Downtown Diner
-  _description: 
+  _description: "A prime downtown diner location \u2014 higher cost, but strong daily earnings."
   _baseCost: 2000
   _incomeBonus: 8
   _gridPosition: {x: 0, y: 0}

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Bakery
   _displayName: Bakery
-  _description: 
+  _description: "A warm bakery location downtown \u2014 good returns with moderate investment."
   _baseCost: 1200
   _incomeBonus: 5
   _gridPosition: {x: 0, y: 0}

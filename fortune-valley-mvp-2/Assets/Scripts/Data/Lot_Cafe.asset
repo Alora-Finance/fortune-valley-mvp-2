@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Cafe
   _displayName: Cozy Cafe
-  _description: 
+  _description: "A cozy cafe spot in a charming neighborhood \u2014 solid income for the price."
   _baseCost: 800
   _incomeBonus: 3
   _gridPosition: {x: 0, y: 0}

@@ -63,6 +63,10 @@ namespace FortuneValley.UI.Panels
         private Color _buyButtonNormalColor;
         private Color _sellButtonNormalColor;
 
+        // Quantity button tinting (match buy/sell mode color)
+        private List<Image> _quantityButtonImages = new List<Image>();
+        private List<Color> _quantityButtonNormalColors = new List<Color>();
+
         private int _ticksSinceRefresh;
         private const int REFRESH_INTERVAL = 5;
         private bool _initialized;
@@ -154,6 +158,10 @@ namespace FortuneValley.UI.Panels
             SnapshotPrices();
 
             RefreshLiveData();
+
+            // Restore quantity button tint if an asset is already selected
+            if (_selectedDef != null)
+                UpdateQuantityButtonColors();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -308,6 +316,21 @@ namespace FortuneValley.UI.Panels
                 if (maxBtn != null)
                     maxBtn.onClick.AddListener(ExecuteTradeMax);
             }
+
+            // Capture Image components for quantity button tinting
+            CaptureQuantityButtonImage(qtyGrid.Find("x1Button"));
+            CaptureQuantityButtonImage(qtyGrid.Find("x5Button"));
+            CaptureQuantityButtonImage(qtyGrid.Find("x50Button"));
+            CaptureQuantityButtonImage(maxGO);
+        }
+
+        private void CaptureQuantityButtonImage(Transform go)
+        {
+            if (go == null) return;
+            var img = go.GetComponent<Image>();
+            if (img == null) return;
+            _quantityButtonImages.Add(img);
+            _quantityButtonNormalColors.Add(img.color);
         }
 
         private void WireQuantityButton(Transform grid, string name, int quantity)
@@ -347,6 +370,7 @@ namespace FortuneValley.UI.Panels
 
             UpdateSelectedAssetDisplay();
             UpdateTradeModeHighlight();
+            UpdateQuantityButtonColors();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -357,6 +381,7 @@ namespace FortuneValley.UI.Panels
         {
             _isBuying = buying;
             UpdateTradeModeHighlight();
+            UpdateQuantityButtonColors();
         }
 
         private void UpdateTradeModeHighlight()
@@ -373,6 +398,33 @@ namespace FortuneValley.UI.Panels
                 var sellImg = _sellButton.GetComponent<Image>();
                 if (sellImg != null)
                     sellImg.color = !_isBuying ? _selectedButtonColor : _sellButtonNormalColor;
+            }
+        }
+
+        /// <summary>
+        /// Tint quantity buttons to a lightened version of the active buy/sell color.
+        /// </summary>
+        private void UpdateQuantityButtonColors()
+        {
+            Color baseColor = _isBuying ? _buyButtonNormalColor : _sellButtonNormalColor;
+            Color tint = Color.Lerp(baseColor, Color.white, 0.3f);
+
+            for (int i = 0; i < _quantityButtonImages.Count; i++)
+            {
+                if (_quantityButtonImages[i] != null)
+                    _quantityButtonImages[i].color = tint;
+            }
+        }
+
+        /// <summary>
+        /// Restore quantity buttons to their original neutral colors.
+        /// </summary>
+        private void RestoreQuantityButtonColors()
+        {
+            for (int i = 0; i < _quantityButtonImages.Count; i++)
+            {
+                if (i < _quantityButtonNormalColors.Count && _quantityButtonImages[i] != null)
+                    _quantityButtonImages[i].color = _quantityButtonNormalColors[i];
             }
         }
 
@@ -507,6 +559,8 @@ namespace FortuneValley.UI.Panels
 
         private void ClearSelectedAssetDisplay()
         {
+            RestoreQuantityButtonColors();
+
             if (_selectedAssetText != null)
                 _selectedAssetText.text = "Selected Asset: ---";
             if (_priceText != null)

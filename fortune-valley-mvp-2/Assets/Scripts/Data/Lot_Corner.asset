@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FortuneValley::FortuneValley.Core.CityLotDefinition
   _lotId: Lot_Corner
   _displayName: Corner Stand
-  _description: 
+  _description: "A busy street corner with steady foot traffic \u2014 affordable and reliable."
   _baseCost: 500
   _incomeBonus: 2
   _gridPosition: {x: 0, y: 0}
