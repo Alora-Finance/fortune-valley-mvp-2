@@ -425,7 +425,7 @@ namespace FortuneValley.Editor
             fillImg.color = new Color(0.9f, 0.3f, 0.3f);
 
             // Status text
-            GameObject statusText = CreateText(display.transform, "StatusText", "3 / 7 lots", 11, TMPro.TextAlignmentOptions.Center);
+            GameObject statusText = CreateText(display.transform, "StatusText", "3 / 5 lots", 11, TMPro.TextAlignmentOptions.Center);
 
             // Add component
             BotProgressBar botProgress = display.AddComponent<BotProgressBar>();

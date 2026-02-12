@@ -49,7 +49,7 @@ namespace FortuneValley.UI.Panels
             new SlideData
             {
                 Title = "Your Goal",
-                Body = "Buy all 7 city lots before your rival does.\n\n" +
+                Body = "Buy all 5 city lots before your rival does.\n\n" +
                        "Each lot costs money and gives you a daily income bonus. " +
                        "The player who owns the most lots when all are sold wins!"
             },

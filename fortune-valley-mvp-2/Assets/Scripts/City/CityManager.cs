@@ -18,7 +18,7 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         [Header("City Lots")]
-        [Tooltip("All lots in the city (7 for POC)")]
+        [Tooltip("All lots in the city (5 for POC)")]
         [SerializeField] private List<CityLotDefinition> _allLots;
 
         [Header("Dependencies")]

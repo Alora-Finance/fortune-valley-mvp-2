@@ -4,7 +4,7 @@ namespace FortuneValley.Core
 {
     /// <summary>
     /// Defines a single lot in the city that can be purchased.
-    /// Create 7 of these for the POC.
+    /// Create 5 of these for the POC.
     ///
     /// LEARNING DESIGN: Lots represent the goal. Students must balance
     /// "buy this lot now" vs "invest money to afford a better lot later."

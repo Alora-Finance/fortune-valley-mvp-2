@@ -31,6 +31,7 @@ namespace FortuneValley.Core
                 var standalone = eventSystem.GetComponent<StandaloneInputModule>();
                 if (standalone != null)
                 {
+                    standalone.enabled = false; // Disable immediately (Destroy is deferred)
                     Object.Destroy(standalone);
 
                     // Add InputSystemUIInputModule if not already present

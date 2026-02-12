@@ -119,11 +119,11 @@ public static class GameEndPanelBuilder
         SetPreferredHeight(daysPlayed.gameObject, 28);
 
         var lotsOwned = CreateTMPText("LotsOwnedText", statsSection.transform,
-            "Your Lots: 5/7", 18, FontStyles.Normal, Color.white);
+            "Your Lots: 3/5", 18, FontStyles.Normal, Color.white);
         SetPreferredHeight(lotsOwned.gameObject, 28);
 
         var rivalLots = CreateTMPText("RivalLotsText", statsSection.transform,
-            "Rival Lots: 2/7", 18, FontStyles.Normal, Color.white);
+            "Rival Lots: 2/5", 18, FontStyles.Normal, Color.white);
         SetPreferredHeight(rivalLots.gameObject, 28);
 
         var netWorth = CreateTMPText("NetWorthText", statsSection.transform,

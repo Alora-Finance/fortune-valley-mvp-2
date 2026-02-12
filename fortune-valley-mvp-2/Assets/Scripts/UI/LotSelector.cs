@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -27,7 +28,6 @@ namespace FortuneValley.UI
         [SerializeField] private float _maxRayDistance = 100f;
 
         [Header("References")]
-        [SerializeField] private LotPurchasePopup _purchasePopup;
         [SerializeField] private CityManager _cityManager;
 
         [Header("Visual Feedback")]
@@ -48,6 +48,8 @@ namespace FortuneValley.UI
         private LotVisual _selectedLot;
         private int _currentTick;
         private bool _isEnabled = true;
+        // Reusable list to avoid per-frame allocation in IsPointerOverUI
+        private readonly List<RaycastResult> _uiRaycastResults = new List<RaycastResult>();
 
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -58,11 +60,6 @@ namespace FortuneValley.UI
             if (_camera == null)
             {
                 _camera = Camera.main;
-            }
-
-            if (_purchasePopup == null)
-            {
-                _purchasePopup = FindFirstObjectByType<LotPurchasePopup>(FindObjectsInactive.Include);
             }
 
             if (_cityManager == null)
@@ -91,7 +88,12 @@ namespace FortuneValley.UI
             if (!_isEnabled) return;
 
             // Don't process if UI is blocking
-            if (IsPointerOverUI()) return;
+            if (IsPointerOverUI())
+            {
+                if (_debugRaycast)
+                    UnityEngine.Debug.Log($"[LotSelector] Blocked by UI at {GetPointerPosition()}");
+                return;
+            }
 
             HandleHover();
             HandleClick();
@@ -166,12 +168,18 @@ namespace FortuneValley.UI
 
         private bool IsPointerOverUI()
         {
-            // Check if pointer is over UI elements
-            if (EventSystem.current != null)
-            {
-                return EventSystem.current.IsPointerOverGameObject();
-            }
-            return false;
+            // Fresh raycast each frame instead of IsPointerOverGameObject(),
+            // which has a stale-cache bug with InputSystemUIInputModule —
+            // it keeps returning true after UI elements are deactivated.
+            if (EventSystem.current == null) return false;
+
+            var eventData = new PointerEventData(EventSystem.current);
+            eventData.position = GetPointerPosition();
+
+            _uiRaycastResults.Clear();
+            EventSystem.current.RaycastAll(eventData, _uiRaycastResults);
+
+            return _uiRaycastResults.Count > 0;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -200,6 +208,11 @@ namespace FortuneValley.UI
                 }
 
                 return lotVisual;
+            }
+
+            if (_debugRaycast)
+            {
+                UnityEngine.Debug.Log($"[LotSelector] Raycast MISS from {ray.origin} dir {ray.direction}");
             }
 
             return null;
@@ -251,16 +264,18 @@ namespace FortuneValley.UI
 
         private void ShowPurchasePopup(CityLotDefinition lot)
         {
-            if (_purchasePopup != null)
+            var popup = UIManager.Instance.LotPurchasePopup as LotPurchasePopup;
+            if (popup == null) return;
+
+            // If popup is already visible (rapid clicks), reconfigure without re-pushing to stack
+            if (popup.IsVisible)
             {
-                // Pass lot world position so popup appears near the clicked lot
-                _purchasePopup.ShowForLot(lot, _currentTick, _selectedLot.transform.position);
+                popup.ConfigureForLot(lot, _currentTick);
+                return;
             }
-            else
-            {
-                // Fallback: use UIManager
-                UIManager.Instance.ShowPopup(PopupType.LotPurchase);
-            }
+
+            popup.ConfigureForLot(lot, _currentTick);
+            UIManager.Instance.ShowPopup(popup);
         }
 
         // ═══════════════════════════════════════════════════════════════

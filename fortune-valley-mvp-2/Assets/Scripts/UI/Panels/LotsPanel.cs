@@ -35,7 +35,6 @@ namespace FortuneValley.UI.Panels
 
         [Header("References")]
         [SerializeField] private CityManager _cityManager;
-        [SerializeField] private LotPurchasePopup _purchasePopup;
 
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE
@@ -69,11 +68,6 @@ namespace FortuneValley.UI.Panels
             if (_cityManager == null)
             {
                 _cityManager = FindFirstObjectByType<CityManager>();
-            }
-
-            if (_purchasePopup == null)
-            {
-                _purchasePopup = FindFirstObjectByType<LotPurchasePopup>();
             }
 
             SetupControls();
@@ -280,9 +274,17 @@ namespace FortuneValley.UI.Panels
             if (owner == Owner.None)
             {
                 // Open purchase popup for available lots
-                if (_purchasePopup != null)
+                var popup = UIManager.Instance.LotPurchasePopup as LotPurchasePopup;
+                if (popup != null)
                 {
-                    _purchasePopup.ShowForLot(lot, _currentTick);
+                    if (popup.IsVisible)
+                    {
+                        popup.ConfigureForLot(lot, _currentTick);
+                        return;
+                    }
+
+                    popup.ConfigureForLot(lot, _currentTick);
+                    UIManager.Instance.ShowPopup(popup);
                 }
             }
             else

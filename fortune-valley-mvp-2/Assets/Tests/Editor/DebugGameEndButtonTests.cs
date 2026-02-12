@@ -44,7 +44,7 @@ namespace FortuneValley.Tests
             Assert.IsTrue(receivedIsPlayerWin);
             Assert.IsNotNull(receivedSummary);
             Assert.AreEqual(45, receivedSummary.DaysPlayed);
-            Assert.AreEqual(5, receivedSummary.PlayerLots);
+            Assert.AreEqual(3, receivedSummary.PlayerLots);
             Assert.AreEqual("Smart Investor!", receivedSummary.Headline);
         }
 
@@ -64,7 +64,7 @@ namespace FortuneValley.Tests
             Assert.IsFalse(receivedIsPlayerWin);
             Assert.IsNotNull(receivedSummary);
             Assert.AreEqual(60, receivedSummary.DaysPlayed);
-            Assert.AreEqual(5, receivedSummary.RivalLots);
+            Assert.AreEqual(4, receivedSummary.RivalLots);
             Assert.AreEqual("The Rival Got Ahead", receivedSummary.Headline);
         }
 

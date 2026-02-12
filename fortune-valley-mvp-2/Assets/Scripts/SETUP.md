@@ -26,7 +26,7 @@ Suggested investments:
 | Bonds | Government Bonds | Medium | 0.06 (6%) | (0.8, 1.2) | 30 |
 | Stocks | Stock Market | High | 0.12 (12%) | (0.5, 1.8) | 30 |
 
-**City Lots (create 7):**
+**City Lots (create 5):**
 - Right-click → Create → Fortune Valley → City Lot
 
 Suggested lots:
