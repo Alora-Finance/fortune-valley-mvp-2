@@ -79,3 +79,6 @@ Thumbs.db
 
 # Test results
 TestResults.xml
+
+# Coach API key stored in config asset — do not commit
+Assets/Scripts/Data/CoachConfig.asset
