@@ -4,6 +4,9 @@
 **/[Oo]bj/
 **/[Bb]uild/
 **/[Bb]uilds/
+
+# Allow WebGL build files in GitHub Pages deployment
+!docs/**/[Bb]uild/
 **/[Ll]ogs/
 **/[Uu]ser[Ss]ettings/
 *.log

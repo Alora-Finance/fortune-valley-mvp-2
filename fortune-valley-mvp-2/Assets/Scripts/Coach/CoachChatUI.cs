@@ -275,7 +275,7 @@ namespace FortuneValley.UI
             // Message content
             var msgText = UIBuilderUtils.CreateTMPText("Content", bubble.transform,
                 text, 14, FontStyles.Normal, new Color(0.9f, 0.9f, 0.95f));
-            msgText.enableWordWrapping = true;
+            msgText.textWrappingMode = TextWrappingModes.Normal;
 
             // Auto-size the bubble height
             var fitter = bubble.AddComponent<ContentSizeFitter>();

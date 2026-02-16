@@ -78,5 +78,53 @@ namespace FortuneValley.Tests
 
             Assert.IsFalse(gameEndFired, "OnGameEnd should NOT fire — only OnGameEndWithSummary");
         }
+
+        // --- ShouldPreserveGameObject tests ---
+
+        [Test]
+        public void ShouldPreserveGameObject_NoChildren_ReturnsFalse()
+        {
+            // Leaf debug button with no children → safe to destroy entirely
+            Assert.IsFalse(_button.ShouldPreserveGameObject());
+        }
+
+        [Test]
+        public void ShouldPreserveGameObject_OnlyDebugChildren_ReturnsFalse()
+        {
+            // All children are debug buttons → no non-debug children to preserve
+            var child1 = new UnityEngine.GameObject("DebugChild1");
+            child1.AddComponent<DebugGameEndButton>();
+            child1.transform.SetParent(_go.transform);
+
+            var child2 = new UnityEngine.GameObject("DebugChild2");
+            child2.AddComponent<DebugGameEndButton>();
+            child2.transform.SetParent(_go.transform);
+
+            Assert.IsFalse(_button.ShouldPreserveGameObject());
+        }
+
+        [Test]
+        public void ShouldPreserveGameObject_MixedChildren_ReturnsTrue()
+        {
+            // Container with both debug and non-debug children (e.g. BottomBar)
+            var debugChild = new UnityEngine.GameObject("WinButton");
+            debugChild.AddComponent<DebugGameEndButton>();
+            debugChild.transform.SetParent(_go.transform);
+
+            var normalChild = new UnityEngine.GameObject("PortfolioButton");
+            normalChild.transform.SetParent(_go.transform);
+
+            Assert.IsTrue(_button.ShouldPreserveGameObject());
+        }
+
+        [Test]
+        public void ShouldPreserveGameObject_OnlyNonDebugChildren_ReturnsTrue()
+        {
+            // Container with only non-debug children → must preserve
+            var child = new UnityEngine.GameObject("PortfolioButton");
+            child.transform.SetParent(_go.transform);
+
+            Assert.IsTrue(_button.ShouldPreserveGameObject());
+        }
     }
 }

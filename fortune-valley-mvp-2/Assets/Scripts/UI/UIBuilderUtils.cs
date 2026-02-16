@@ -69,7 +69,7 @@ namespace FortuneValley.UI
             tmp.fontStyle = style;
             tmp.color = color;
             tmp.alignment = TextAlignmentOptions.Left;
-            tmp.enableWordWrapping = true;
+            tmp.textWrappingMode = TextWrappingModes.Normal;
             tmp.overflowMode = TextOverflowModes.Overflow;
             return tmp;
         }

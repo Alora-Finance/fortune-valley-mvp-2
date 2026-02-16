@@ -25,8 +25,10 @@ namespace FortuneValley.Grid
         [Tooltip("Random seed for reproducible generation (0 = random)")]
         [SerializeField] private int _seed = 0;
 
+#if UNITY_EDITOR
         [Header("Debug")]
         [SerializeField] private bool _showBoundsGizmo = true;
+#endif
 
         // ═══════════════════════════════════════════════════════════════
         // RUNTIME STATE

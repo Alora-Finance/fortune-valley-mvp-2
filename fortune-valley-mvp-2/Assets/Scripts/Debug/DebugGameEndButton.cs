@@ -10,10 +10,38 @@ namespace FortuneValley.Core
     /// </summary>
     public class DebugGameEndButton : MonoBehaviour
     {
+        /// <summary>
+        /// Returns true if this GameObject has children that are NOT debug buttons
+        /// (meaning it's a container like BottomBar and should not be destroyed).
+        /// </summary>
+        public bool ShouldPreserveGameObject()
+        {
+            foreach (Transform child in transform)
+            {
+                if (child.GetComponent<DebugGameEndButton>() == null)
+                    return true;
+            }
+            return false;
+        }
+
         private void Awake()
         {
 #if !(UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Destroy(gameObject);
+            if (ShouldPreserveGameObject())
+            {
+                // Container (e.g. BottomBar): destroy debug-only children, keep non-debug children
+                foreach (Transform child in transform)
+                {
+                    if (child.GetComponent<DebugGameEndButton>() != null)
+                        Destroy(child.gameObject);
+                }
+                Destroy(this);
+            }
+            else
+            {
+                // Leaf debug button (e.g. WinButton): destroy entire GameObject
+                Destroy(gameObject);
+            }
             return;
 #endif
         }
