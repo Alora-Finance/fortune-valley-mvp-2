@@ -14,36 +14,47 @@
       line-height: 1.6;
     }
 
-    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    /* Split-screen layout */
+    .page-layout {
+      display: flex;
+      min-height: 100vh;
+    }
 
-    /* Hero */
-    .hero {
+    /* Left: Sticky Hero */
+    .hero-panel {
+      width: 40%;
+      position: sticky;
+      top: 0;
+      height: 100vh;
       background: #2D8C4E;
       color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
       text-align: center;
-      padding: 64px 24px 48px;
     }
-    .hero h1 {
-      font-size: 3rem;
+    .hero-panel img {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      margin-bottom: 24px;
+    }
+    .hero-panel h1 {
+      font-size: 2.5rem;
       font-weight: 800;
       letter-spacing: -0.02em;
       margin-bottom: 8px;
     }
-    .hero .subtitle {
-      font-size: 1.25rem;
+    .hero-panel .subtitle {
+      font-size: 1.05rem;
       opacity: 0.9;
-      margin-bottom: 32px;
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
+      margin-bottom: 28px;
+      max-width: 320px;
     }
-    .hero-img {
-      width: 100%;
-      max-width: 700px;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      margin-bottom: 32px;
-    }
+
     .btn {
       display: inline-block;
       background: #fff;
@@ -64,190 +75,320 @@
       color: #fff;
     }
 
-    /* Sections */
-    section { padding: 64px 0; }
-    section:nth-child(even) { background: #f7faf8; }
+    /* Right: Scrollable Content */
+    .content {
+      width: 60%;
+      min-height: 100vh;
+    }
+
+    .content section {
+      padding: 56px 48px;
+    }
+    .content section:nth-child(even) {
+      background: #f7faf8;
+    }
 
     h2 {
-      font-size: 1.75rem;
+      font-size: 1.6rem;
       font-weight: 700;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       color: #1a1a1a;
     }
 
     .section-lead {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: #444;
-      margin-bottom: 32px;
-      max-width: 700px;
+      margin-bottom: 28px;
+      max-width: 640px;
     }
 
-    /* Thesis */
+    /* Thesis cards */
     .thesis-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-top: 16px;
+      gap: 20px;
+      margin-top: 12px;
     }
     .thesis-card {
       background: #fff;
       border: 1px solid #e0e0e0;
       border-radius: 10px;
-      padding: 24px;
+      padding: 20px;
     }
     .thesis-card h3 {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
       color: #2D8C4E;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .thesis-card p {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #555;
     }
 
-    /* How It Works */
-    .feature {
-      display: flex;
-      gap: 32px;
-      align-items: center;
-      margin-bottom: 40px;
+    /* Screenshots */
+    .screenshot-block {
+      margin-bottom: 32px;
     }
-    .feature:last-child { margin-bottom: 0; }
-    .feature-img {
-      width: 420px;
-      min-width: 280px;
+    .screenshot-block:last-child { margin-bottom: 0; }
+    .screenshot-block img {
+      width: 100%;
       border-radius: 10px;
       border: 1px solid #e0e0e0;
+      margin-bottom: 12px;
     }
-    .feature-text h3 {
-      font-size: 1.15rem;
+    .screenshot-block h3 {
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
-    .feature-text p {
+    .screenshot-block p {
       color: #555;
       font-size: 0.95rem;
     }
 
-    /* CTA */
+    /* Asking section */
+    .highlight-box {
+      background: #eaf5ee;
+      border-left: 4px solid #2D8C4E;
+      padding: 20px 24px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+    }
+    .highlight-box p {
+      font-size: 1.05rem;
+      color: #1a1a1a;
+      font-weight: 600;
+    }
+
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin-top: 16px;
+    }
+    .checklist li {
+      padding: 6px 0;
+      padding-left: 24px;
+      position: relative;
+      color: #444;
+      font-size: 0.95rem;
+    }
+    .checklist li::before {
+      content: "\2713";
+      position: absolute;
+      left: 0;
+      color: #2D8C4E;
+      font-weight: 700;
+    }
+
+    /* Roadmap */
+    .roadmap-steps {
+      list-style: none;
+      padding: 0;
+      margin-top: 16px;
+    }
+    .roadmap-steps li {
+      padding: 10px 0 10px 36px;
+      position: relative;
+      color: #444;
+      font-size: 0.95rem;
+      border-left: 2px solid #d0e6d8;
+    }
+    .roadmap-steps li::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: 14px;
+      width: 10px;
+      height: 10px;
+      background: #2D8C4E;
+      border-radius: 50%;
+    }
+    .roadmap-steps li:last-child {
+      border-left-color: transparent;
+    }
+
+    /* Bottom CTA */
     .cta {
       text-align: center;
-      padding: 64px 24px;
+      padding: 48px;
       background: #f7faf8;
     }
     .cta p {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: #444;
-      margin-bottom: 24px;
-      max-width: 560px;
+      margin-bottom: 20px;
+      max-width: 480px;
       margin-left: auto;
       margin-right: auto;
     }
 
     /* Footer */
-    footer {
+    .content footer {
       text-align: center;
-      padding: 32px 24px;
+      padding: 28px 48px;
       color: #888;
       font-size: 0.85rem;
       border-top: 1px solid #eee;
     }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .hero h1 { font-size: 2rem; }
-      .hero .subtitle { font-size: 1rem; }
-      .thesis-grid { grid-template-columns: 1fr; }
-      .feature { flex-direction: column; }
-      .feature-img { width: 100%; min-width: 0; }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .page-layout {
+        flex-direction: column;
+      }
+      .hero-panel {
+        width: 100%;
+        position: relative;
+        height: auto;
+        padding: 40px 24px;
+      }
+      .hero-panel img {
+        max-width: 280px;
+      }
+      .hero-panel h1 {
+        font-size: 2rem;
+      }
+      .content {
+        width: 100%;
+      }
+      .content section {
+        padding: 40px 24px;
+      }
+      .thesis-grid {
+        grid-template-columns: 1fr;
+      }
+      .content footer {
+        padding: 24px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Hero -->
-  <header class="hero">
-    <div class="container">
+  <div class="page-layout">
+
+    <!-- Left: Sticky Hero -->
+    <aside class="hero-panel">
+      <img src="images/hero-title.jpg" alt="Fortune Valley title screen">
       <h1>Fortune Valley</h1>
-      <p class="subtitle">A game that teaches high school students personal finance — by making them use it to win.</p>
-      <img src="images/hero-title.jpg" alt="Fortune Valley title screen" class="hero-img">
-      <br>
+      <p class="subtitle">A game that teaches personal finance by making students use it to win.</p>
       <a href="play.html" class="btn">Play Now</a>
-    </div>
-  </header>
+    </aside>
 
-  <!-- Why Game-Based Learning? -->
-  <section>
-    <div class="container">
-      <h2>Why Game-Based Learning?</h2>
-      <p class="section-lead">
-        Only 57% of U.S. adults are financially literate, yet traditional classroom methods — worksheets, lectures, textbook chapters — consistently fail to engage the students who need this knowledge most. The problem isn't the content. It's the delivery.
-      </p>
-      <div class="thesis-grid">
-        <div class="thesis-card">
-          <h3>Intrinsic Motivation</h3>
-          <p>Games create a reason to care. Students don't learn compound interest because it's on the test — they learn it because they need it to beat their rival and win the city.</p>
-        </div>
-        <div class="thesis-card">
-          <h3>Opportunity Cost</h3>
-          <p>Every dollar spent on a property is a dollar not invested. The game makes this trade-off visceral: buy now and fall behind, or invest and overtake.</p>
-        </div>
-        <div class="thesis-card">
-          <h3>Compound Interest</h3>
-          <p>Students watch their investments grow in real time. They see the difference between investing on Day 1 versus Day 10 — and they feel it in their balance.</p>
-        </div>
-        <div class="thesis-card">
-          <h3>Risk vs. Reward</h3>
-          <p>Stocks can spike or crash. Bonds are safe but slow. Students learn to diversify not from a definition, but from losing money they needed.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    <!-- Right: Scrollable Content -->
+    <main class="content">
 
-  <!-- How It Works -->
-  <section>
-    <div class="container">
-      <h2>How It Works</h2>
-      <p class="section-lead">
-        Students run a restaurant in a growing city, competing against an AI rival to acquire properties. The catch: the only way to earn enough money is to make smart financial decisions.
-      </p>
+      <!-- 1. Why Game-Based Learning -->
+      <section>
+        <h2>Why Game-Based Learning?</h2>
+        <p class="section-lead">
+          Only 57% of U.S. adults are financially literate, yet traditional classroom methods &mdash; worksheets, lectures, textbook chapters &mdash; consistently fail to engage the students who need this knowledge most. The problem isn't the content. It's the delivery.
+        </p>
+        <div class="thesis-grid">
+          <div class="thesis-card">
+            <h3>Intrinsic Motivation</h3>
+            <p>Games create a reason to care. Students don't learn compound interest because it's on the test &mdash; they learn it because they need it to beat their rival and win the city.</p>
+          </div>
+          <div class="thesis-card">
+            <h3>Opportunity Cost</h3>
+            <p>Every dollar spent on a property is a dollar not invested. The game makes this trade-off visceral: buy now and fall behind, or invest and overtake.</p>
+          </div>
+          <div class="thesis-card">
+            <h3>Compound Interest</h3>
+            <p>Students watch their investments grow in real time. They see the difference between investing on Day 1 versus Day 10 &mdash; and they feel it in their balance.</p>
+          </div>
+          <div class="thesis-card">
+            <h3>Risk vs. Reward</h3>
+            <p>Stocks can spike or crash. Bonds are safe but slow. Students learn to diversify not from a definition, but from losing money they needed.</p>
+          </div>
+        </div>
+      </section>
 
-      <div class="feature">
-        <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
-        <div class="feature-text">
+      <!-- 2. What Fortune Valley Is -->
+      <section>
+        <h2>What Fortune Valley Is</h2>
+        <p class="section-lead">
+          Students run a restaurant in a growing city, competing against an AI rival to acquire properties. The catch: the only way to earn enough money is to make smart financial decisions.
+        </p>
+
+        <div class="screenshot-block">
+          <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city">
           <h3>Manage Your Money in Real Time</h3>
-          <p>The HUD shows your balance, your rival's progress, and the ticking clock. Students navigate between their portfolio, available lots, and investment options — making decisions under pressure that mirror real financial trade-offs.</p>
+          <p>The HUD shows your balance, your rival's progress, and the ticking clock. Students navigate between their portfolio, available lots, and investment options &mdash; making decisions under pressure that mirror real financial trade-offs.</p>
         </div>
-      </div>
 
-      <div class="feature">
-        <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view" class="feature-img">
-        <div class="feature-text">
+        <div class="screenshot-block">
+          <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view">
           <h3>Build Your City, Beat Your Rival</h3>
-          <p>The isometric city is the scoreboard. Every property you buy lights up on the map. But your rival is buying too — and they don't wait. Students learn that timing, patience, and strategy matter more than speed.</p>
+          <p>The isometric city is the scoreboard. Every property you buy lights up on the map. But your rival is buying too &mdash; and they don't wait. Students learn that timing, patience, and strategy matter more than speed.</p>
         </div>
+      </section>
+
+      <!-- 3. What We're Asking -->
+      <section>
+        <h2>What We're Asking</h2>
+        <p class="section-lead">
+          This is an early prototype, not a finished product. We're building Fortune Valley iteratively &mdash; previewing and asking as we go to make sure we stay on the right track. That's where you come in.
+        </p>
+        <p class="section-lead">
+          You're not just a tester. You're a <strong>co-creator</strong>. Your feedback directly shapes what gets built next. Every version your students play will reflect what you told us about the last one.
+        </p>
+
+        <div class="highlight-box">
+          <p>The #1 question we need answered right now: Is this fun?</p>
+        </div>
+
+        <p class="section-lead" style="margin-top: 0;">
+          What parts are engaging? What's boring? Where do students lose interest? Where do they lean in? That signal is the most valuable thing you can give us at this stage.
+        </p>
+      </section>
+
+      <!-- 4. What the MVP Looks Like Now -->
+      <section>
+        <h2>What the MVP Looks Like Now</h2>
+        <p class="section-lead">
+          The current version is a playable WebGL game that runs right in the browser &mdash; no downloads, no installs. Here's what's in it:
+        </p>
+        <ul class="checklist">
+          <li>City building &mdash; buy properties on an isometric map</li>
+          <li>Investment system &mdash; stocks, bonds, ETFs with real market behavior</li>
+          <li>AI rival &mdash; competes for the same properties</li>
+          <li>Time pressure &mdash; a ticking clock that forces real trade-offs</li>
+        </ul>
+        <p class="section-lead" style="margin-top: 24px;">
+          It's a prototype. The visuals and polish will improve. What matters now is whether the core loop &mdash; earn, invest, buy, compete &mdash; is fun.
+        </p>
+      </section>
+
+      <!-- 5. What's Next -->
+      <section>
+        <h2>What's Next</h2>
+        <p class="section-lead">
+          Student and teacher feedback shapes the next build. We're running a tight iterative cycle:
+        </p>
+        <ol class="roadmap-steps">
+          <li>Students play the current version</li>
+          <li>You tell us what worked and what didn't</li>
+          <li>We build the next version around that feedback</li>
+          <li>Repeat &mdash; until the game makes financial literacy genuinely fun</li>
+        </ol>
+      </section>
+
+      <!-- Bottom CTA -->
+      <div class="cta">
+        <p>Ready to try it? The game runs in your browser &mdash; nothing to install.</p>
+        <a href="play.html" class="btn btn-green">Play Now</a>
       </div>
-    </div>
-  </section>
 
-  <!-- Next Steps -->
-  <section class="cta">
-    <div class="container">
-      <h2>Let's Test This With Students</h2>
-      <p>
-        If we're aligned on the value of game-based financial education, the next step is simple: put Fortune Valley in front of real students and measure what they learn.
-      </p>
-      <a href="play.html" class="btn btn-green">Try the Game</a>
-    </div>
-  </section>
+      <!-- Footer -->
+      <footer>
+        Fortune Valley &mdash; A proof of concept for game-based financial literacy education.
+      </footer>
 
-  <!-- Footer -->
-  <footer>
-    <div class="container">
-      Fortune Valley &mdash; A proof of concept for game-based financial literacy education.
-    </div>
-  </footer>
+    </main>
+
+  </div>
 
 </body>
 </html>
