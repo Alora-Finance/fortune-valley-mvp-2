@@ -43,6 +43,7 @@ namespace FortuneValley.Core
                 sb.AppendLine($"Total Restaurant Income: ${summary.TotalRestaurantIncome:N0}");
                 sb.AppendLine($"Total Spent on Lots: ${summary.TotalSpentOnLots:N0}");
                 sb.AppendLine($"Peak Portfolio Value: ${summary.PeakPortfolioValue:N0}");
+                sb.AppendLine($"Total Principal Invested: ${summary.TotalPrincipalInvested:N0}");
                 sb.AppendLine($"Number of Investments Made: {summary.InvestmentCount}");
             }
             else

@@ -61,6 +61,11 @@ namespace FortuneValley.Core
         /// </summary>
         public float TotalSpentOnLots;
 
+        /// <summary>
+        /// Total money the player put into investments over the game.
+        /// </summary>
+        public float TotalPrincipalInvested;
+
         // ═══════════════════════════════════════════════════════════════
         // LEARNING DATA
         // ═══════════════════════════════════════════════════════════════

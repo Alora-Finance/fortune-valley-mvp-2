@@ -44,6 +44,11 @@ namespace FortuneValley.UI.Panels
         private TextMeshProUGUI _riskLevelText;
         private TextMeshProUGUI _sharesOwnedText;
 
+        // Position info (created programmatically)
+        private TextMeshProUGUI _costBasisText;
+        private TextMeshProUGUI _marketValueText;
+        private TextMeshProUGUI _gainLossText;
+
         // Buttons
         private Button _closeButton;
         private Button _buyButton;
@@ -189,6 +194,17 @@ namespace FortuneValley.UI.Panels
             _riskLevelText = FindText($"{buySellPath}/SelectedAssetInfo/RiskLevelText");
             _sharesOwnedText = FindText($"{buySellPath}/SelectedAssetInfo/SharesOwnedText")
                             ?? FindText($"{buySellPath}/SharesOwnedText");
+
+            // Position info texts (created programmatically below shares owned)
+            Transform infoParent = _sharesOwnedText != null
+                ? _sharesOwnedText.transform.parent
+                : transform.Find($"{buySellPath}/SelectedAssetInfo");
+            if (infoParent != null)
+            {
+                _costBasisText = CreatePositionInfoText("CostBasisText", infoParent);
+                _marketValueText = CreatePositionInfoText("MarketValueText", infoParent);
+                _gainLossText = CreatePositionInfoText("GainLossText", infoParent);
+            }
 
             // Buy/Sell mode buttons
             _buyButton = FindButton($"{buySellPath}/Buy or Sell/ButtonGrid/BuyButton");
@@ -492,7 +508,7 @@ namespace FortuneValley.UI.Panels
 
             float balance = _currencyManager.Balance;
             float portfolioValue = _investmentSystem.TotalPortfolioValue;
-            float totalGain = _investmentSystem.TotalGain;
+            float totalGain = _investmentSystem.LifetimeTotalGain;
 
             if (_balanceText != null)
                 _balanceText.text = $"Balance: ${balance:N0}";
@@ -548,12 +564,40 @@ namespace FortuneValley.UI.Panels
                 };
             }
 
-            // Shares owned
+            // Shares owned + position details
+            var activeInv = GetActiveInvestment(_selectedDef);
             if (_sharesOwnedText != null)
             {
-                var active = GetActiveInvestment(_selectedDef);
-                int shares = active != null ? active.NumberOfShares : 0;
+                int shares = activeInv != null ? activeInv.NumberOfShares : 0;
                 _sharesOwnedText.text = $"Shares Owned: {shares}";
+            }
+
+            // Show position details when player owns shares
+            if (activeInv != null && activeInv.NumberOfShares > 0)
+            {
+                if (_costBasisText != null)
+                {
+                    _costBasisText.gameObject.SetActive(true);
+                    _costBasisText.text = $"Cost Basis: ${activeInv.TotalCostBasis:N0} (${activeInv.AveragePurchasePrice:F2}/share)";
+                }
+                if (_marketValueText != null)
+                {
+                    _marketValueText.gameObject.SetActive(true);
+                    _marketValueText.text = $"Market Value: ${activeInv.CurrentValue:N0}";
+                }
+                if (_gainLossText != null)
+                {
+                    _gainLossText.gameObject.SetActive(true);
+                    float gain = activeInv.TotalGain;
+                    float pct = activeInv.PercentageReturn;
+                    string prefix = gain >= 0 ? "+" : "";
+                    _gainLossText.text = $"Gain/Loss: {prefix}${gain:N0} ({prefix}{pct:F1}%)";
+                    _gainLossText.color = gain >= 0 ? _gainColor : _lossColor;
+                }
+            }
+            else
+            {
+                HidePositionDetails();
             }
         }
 
@@ -577,6 +621,18 @@ namespace FortuneValley.UI.Panels
             }
             if (_sharesOwnedText != null)
                 _sharesOwnedText.text = "Shares Owned: ---";
+
+            HidePositionDetails();
+        }
+
+        private void HidePositionDetails()
+        {
+            if (_costBasisText != null)
+                _costBasisText.gameObject.SetActive(false);
+            if (_marketValueText != null)
+                _marketValueText.gameObject.SetActive(false);
+            if (_gainLossText != null)
+                _gainLossText.gameObject.SetActive(false);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -652,6 +708,29 @@ namespace FortuneValley.UI.Panels
             if (def.BasePricePerShare > 0)
                 return (def.CurrentPrice - def.BasePricePerShare) / def.BasePricePerShare * 100f;
             return 0f;
+        }
+
+        /// <summary>
+        /// Create a TMP text element as a child of the given parent,
+        /// matching the style of sibling info texts.
+        /// </summary>
+        private TextMeshProUGUI CreatePositionInfoText(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.fontSize = 14;
+            tmp.color = Color.white;
+            tmp.alignment = TextAlignmentOptions.Left;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+
+            // Match layout of sibling text elements
+            var le = go.AddComponent<UnityEngine.UI.LayoutElement>();
+            le.preferredHeight = 20;
+            le.flexibleWidth = 1;
+
+            go.SetActive(false);
+            return tmp;
         }
 
         // ═══════════════════════════════════════════════════════════════

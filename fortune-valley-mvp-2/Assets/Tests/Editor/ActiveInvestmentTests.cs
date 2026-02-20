@@ -112,6 +112,7 @@ namespace FortuneValley.Tests
         }
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void TryCompound_AtInterval_ReturnsTrue()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -125,6 +126,7 @@ namespace FortuneValley.Tests
         }
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void TryCompound_IncreasesValue()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -140,6 +142,7 @@ namespace FortuneValley.Tests
         }
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void TryCompound_MultipleCompounds_AccumulatesCorrectly()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -161,6 +164,7 @@ namespace FortuneValley.Tests
         // ═══════════════════════════════════════════════════════════════
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void TotalGain_CalculatesCorrectly()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -171,6 +175,7 @@ namespace FortuneValley.Tests
         }
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void PercentageReturn_CalculatesCorrectly()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -190,6 +195,7 @@ namespace FortuneValley.Tests
         // ═══════════════════════════════════════════════════════════════
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void GetPerformanceExplanation_BeforeCompounding_ExplainsWaiting()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);
@@ -201,6 +207,7 @@ namespace FortuneValley.Tests
         }
 
         [Test]
+        [Ignore("TryCompound is legacy — share-based pricing replaced compounding")]
         public void GetPerformanceExplanation_AfterCompounding_ShowsGains()
         {
             var investment = new ActiveInvestment(_lowRiskDef, 1000f, 0);

@@ -63,6 +63,7 @@ namespace FortuneValley.Core
         // Runtime price state (not serialized)
         private float _currentPrice;
         private float _trendDirection;  // -1 to +1, persists between ticks for momentum
+        private int _daysSinceStart;    // tick counter for compound expected price
         private bool _priceInitialized = false;
 
         // ═══════════════════════════════════════════════════════════════
@@ -150,28 +151,40 @@ namespace FortuneValley.Core
         public void InitializePrice()
         {
             _currentPrice = _basePricePerShare;
-            // Start with a random trend direction (-1 to +1)
             _trendDirection = Random.Range(-1f, 1f);
+            _daysSinceStart = 0;
             _priceInitialized = true;
         }
 
         /// <summary>
-        /// Update price using momentum-based model. Call each tick.
+        /// Update price using mean-reverting model. Call each tick.
         ///
-        /// LEARNING DESIGN: Prices now trend up or down for periods, teaching students
-        /// that markets have momentum. Higher risk = longer trends = bigger swings.
-        /// This helps students see patterns like "holding through a downtrend" or
-        /// "selling at the top of an uptrend."
+        /// LEARNING DESIGN: Prices follow a compound growth path with realistic
+        /// deviations. Low-risk investments hug the expected curve closely;
+        /// high-risk investments deviate more but revert over time.
+        /// Bonds/T-Bills follow smooth compound growth (no randomness).
         /// </summary>
         public void UpdatePrice()
         {
             if (!_priceInitialized)
                 InitializePrice();
 
-            // Step 1: Maybe reverse trend (lower chance = longer trends = more volatility)
-            // Low risk: 20% chance to flip (trends are short, prices stable)
-            // Medium risk: 10% chance (moderate trend length)
-            // High risk: 5% chance (long trends = big swings up or down)
+            _daysSinceStart++;
+
+            // Daily growth rate from annual return (compound basis)
+            float dailyGrowthRate = Mathf.Pow(1f + _annualReturnRate, 1f / 365f) - 1f;
+
+            // Expected price at this point in time (compound growth path)
+            float expectedPrice = _basePricePerShare * Mathf.Pow(1f + dailyGrowthRate, _daysSinceStart);
+
+            // Fixed-return instruments (bonds, T-bills): smooth compound curve, no noise
+            if (HasFixedReturn)
+            {
+                _currentPrice = expectedPrice;
+                return;
+            }
+
+            // Step 1: Maybe reverse trend direction
             float reversalChance = _riskLevel switch
             {
                 RiskLevel.Low => 0.20f,
@@ -182,38 +195,52 @@ namespace FortuneValley.Core
 
             if (Random.value < reversalChance)
             {
-                // Reverse the trend (flip sign and randomize magnitude a bit)
                 _trendDirection = -Mathf.Sign(_trendDirection) * Random.Range(0.5f, 1f);
             }
 
-            // Step 2: Calculate daily price change
-            // Trend strength: how much the trend direction affects price
-            // Higher risk = stronger trend impact
+            // Step 2: Mean-reversion pull toward expected price
+            float meanReversionStrength = _riskLevel switch
+            {
+                RiskLevel.Low => 0.05f,
+                RiskLevel.Medium => 0.02f,
+                RiskLevel.High => 0.01f,
+                _ => 0.02f
+            };
+            float meanReversion = _currentPrice > 0
+                ? (expectedPrice - _currentPrice) / _currentPrice * meanReversionStrength
+                : 0f;
+
+            // Step 3: Trend contribution (reduced from old model)
             float trendStrength = _riskLevel switch
             {
-                RiskLevel.Low => 0.003f,     // 0.3% max trend impact
-                RiskLevel.Medium => 0.01f,   // 1% max trend impact
-                RiskLevel.High => 0.02f,     // 2% max trend impact
-                _ => 0.01f
+                RiskLevel.Low => 0.002f,    // 0.2%
+                RiskLevel.Medium => 0.006f, // 0.6%
+                RiskLevel.High => 0.012f,   // 1.2%
+                _ => 0.006f
             };
+            float trend = _trendDirection * trendStrength;
 
-            // Trend contribution: direction × strength
-            float trendChange = _trendDirection * trendStrength;
+            // Step 4: Small random noise (±0.1%)
+            float noise = Random.Range(-0.001f, 0.001f);
 
-            // Small random noise adds texture (±0.2%)
-            float noise = Random.Range(-0.002f, 0.002f);
-
-            // Upward drift based on expected annual return (long-term trend toward expected value)
-            float dailyDrift = _annualReturnRate / 365f;
-
-            // Total daily change
-            float dailyChange = trendChange + noise + dailyDrift;
-
-            // Step 3: Apply change to price
+            // Step 5: Combine all factors
+            float dailyChange = dailyGrowthRate + meanReversion + trend + noise;
             _currentPrice *= (1f + dailyChange);
 
-            // Clamp to floor (10% of base price) to prevent absurdly low values
-            _currentPrice = Mathf.Max(_currentPrice, _basePricePerShare * 0.1f);
+            // Step 6: Clamp deviation from expected price
+            float maxDeviation = _riskLevel switch
+            {
+                RiskLevel.Low => 0.30f,    // ±30%
+                RiskLevel.Medium => 0.80f, // ±80%
+                RiskLevel.High => 1.50f,   // ±150%
+                _ => 0.80f
+            };
+            float lowerBound = expectedPrice * (1f - maxDeviation);
+            float upperBound = expectedPrice * (1f + maxDeviation);
+            _currentPrice = Mathf.Clamp(_currentPrice, lowerBound, upperBound);
+
+            // Absolute floor: 20% of base price (never crash to near-zero)
+            _currentPrice = Mathf.Max(_currentPrice, _basePricePerShare * 0.2f);
         }
 
         /// <summary>
@@ -224,6 +251,7 @@ namespace FortuneValley.Core
         {
             _currentPrice = _basePricePerShare;
             _trendDirection = Random.Range(-1f, 1f);
+            _daysSinceStart = 0;
             _priceInitialized = true;
         }
     }

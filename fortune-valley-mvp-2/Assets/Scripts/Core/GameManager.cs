@@ -274,10 +274,11 @@ namespace FortuneValley.Core
 
             if (_investmentSystem != null)
             {
-                summary.TotalInvestmentGains = _investmentSystem.TotalGain;
+                summary.TotalInvestmentGains = _investmentSystem.LifetimeTotalGain;
                 summary.FinalNetWorth += _investmentSystem.TotalPortfolioValue;
-                summary.InvestmentCount = _investmentSystem.ActiveInvestments.Count;
-                summary.PeakPortfolioValue = _investmentSystem.TotalPortfolioValue; // simplified
+                summary.InvestmentCount = _investmentSystem.LifetimeTotalInvestmentsMade;
+                summary.PeakPortfolioValue = _investmentSystem.PeakPortfolioValue;
+                summary.TotalPrincipalInvested = _investmentSystem.LifetimeTotalPrincipalInvested;
             }
 
             if (_restaurantSystem != null)

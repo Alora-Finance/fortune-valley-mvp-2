@@ -77,7 +77,7 @@ namespace FortuneValley.Core
 
             // Total wealth = cash + portfolio value
             float totalWealth = _currencyManager.Balance + _investmentSystem.TotalPortfolioValue;
-            float netGain = _investmentSystem.TotalGain;
+            float netGain = _investmentSystem.LifetimeTotalGain;
 
             _totalWealthHistory.Add(totalWealth);
             _netGainHistory.Add(netGain);

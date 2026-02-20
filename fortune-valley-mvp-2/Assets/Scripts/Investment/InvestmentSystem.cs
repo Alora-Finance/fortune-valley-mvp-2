@@ -39,6 +39,12 @@ namespace FortuneValley.Core
 
         private List<ActiveInvestment> _activeInvestments = new List<ActiveInvestment>();
 
+        // Lifetime tracking — survives sell-offs so game-end analysis is accurate
+        private float _lifetimeRealizedGains;
+        private int _lifetimeTotalInvestmentsMade;
+        private float _lifetimeTotalPrincipalInvested;
+        private float _peakPortfolioValue;
+
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
         // ═══════════════════════════════════════════════════════════════
@@ -90,6 +96,27 @@ namespace FortuneValley.Core
         /// </summary>
         public float TotalGain => TotalPortfolioValue - TotalPrincipal;
 
+        /// <summary>
+        /// Lifetime total gain = realized gains from sold investments + unrealized gains on current holdings.
+        /// This never drops when selling at a profit.
+        /// </summary>
+        public float LifetimeTotalGain => _lifetimeRealizedGains + TotalGain;
+
+        /// <summary>
+        /// Total number of buy operations across the entire game.
+        /// </summary>
+        public int LifetimeTotalInvestmentsMade => _lifetimeTotalInvestmentsMade;
+
+        /// <summary>
+        /// Sum of all money ever invested (every buy adds to this).
+        /// </summary>
+        public float LifetimeTotalPrincipalInvested => _lifetimeTotalPrincipalInvested;
+
+        /// <summary>
+        /// Highest portfolio value reached during this game.
+        /// </summary>
+        public float PeakPortfolioValue => _peakPortfolioValue;
+
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════
@@ -109,6 +136,10 @@ namespace FortuneValley.Core
         private void HandleGameStart()
         {
             _activeInvestments.Clear();
+            _lifetimeRealizedGains = 0f;
+            _lifetimeTotalInvestmentsMade = 0;
+            _lifetimeTotalPrincipalInvested = 0f;
+            _peakPortfolioValue = 0f;
             InitializePrices();
         }
 
@@ -116,6 +147,11 @@ namespace FortuneValley.Core
         {
             UpdatePrices();
             UpdateAllInvestments(tickNumber);
+
+            // Track peak portfolio value for game-end analysis
+            float currentValue = TotalPortfolioValue;
+            if (currentValue > _peakPortfolioValue)
+                _peakPortfolioValue = currentValue;
         }
 
         /// <summary>
@@ -168,6 +204,10 @@ namespace FortuneValley.Core
                 Debug.Log($"[InvestmentSystem] Cannot afford ${totalCost:F0} for {shareCount} shares");
                 return null;
             }
+
+            // Track lifetime buy operations
+            _lifetimeTotalInvestmentsMade++;
+            _lifetimeTotalPrincipalInvested += totalCost;
 
             // Check if player already has this investment type - consolidate if so
             var existing = _activeInvestments.Find(inv => inv.Definition == definition);
@@ -224,6 +264,7 @@ namespace FortuneValley.Core
                 return SellAllShares(investment);
 
             float pricePerShare = investment.Definition.CurrentPrice;
+            RecordRealizedGain(investment, shareCount, pricePerShare);
             int removed = investment.RemoveShares(shareCount);
             float payout = removed * pricePerShare;
 
@@ -248,6 +289,8 @@ namespace FortuneValley.Core
                 return 0f;
             }
 
+            float pricePerShare = investment.Definition.CurrentPrice;
+            RecordRealizedGain(investment, investment.NumberOfShares, pricePerShare);
             float payout = investment.CurrentValue;
             _activeInvestments.Remove(investment);
 
@@ -351,6 +394,16 @@ namespace FortuneValley.Core
                 return 0f;
 
             return (TotalPortfolioValue / TotalPrincipal - 1f) * 100f;
+        }
+
+        /// <summary>
+        /// Record realized gain/loss when selling shares.
+        /// This accumulates over the game so game-end analysis reflects total performance.
+        /// </summary>
+        private void RecordRealizedGain(ActiveInvestment inv, int sharesSold, float sellPrice)
+        {
+            float gainPerShare = sellPrice - inv.AveragePurchasePrice;
+            _lifetimeRealizedGains += gainPerShare * sharesSold;
         }
     }
 }

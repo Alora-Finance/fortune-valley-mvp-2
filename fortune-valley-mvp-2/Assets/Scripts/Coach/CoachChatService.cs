@@ -120,37 +120,49 @@ namespace FortuneValley.Core
 
                 _isProcessing = false;
 
-                if (request.result != UnityWebRequest.Result.Success)
+                try
                 {
-                    // Remove the user message we just added since the request failed
-                    if (_history.Count > 1)
-                        _history.RemoveAt(_history.Count - 1);
-
-                    // Log the response body for debugging API errors
-                    string responseBody = request.downloadHandler?.text;
-                    if (!string.IsNullOrEmpty(responseBody))
+                    if (request.result != UnityWebRequest.Result.Success)
                     {
-                        // Replace newlines so Unity console shows the full JSON on one line
-                        string flat = responseBody.Replace("\n", " ").Replace("\r", "");
-                        if (flat.Length > 1000) flat = flat.Substring(0, 1000);
-                        UnityEngine.Debug.LogWarning("[CoachChat] API error body (" + responseBody.Length + " chars): " + flat);
+                        // Remove the user message we just added since the request failed
+                        if (_history.Count > 1)
+                            _history.RemoveAt(_history.Count - 1);
+
+                        // Log the response body for debugging API errors
+                        string responseBody = request.downloadHandler?.text;
+                        if (!string.IsNullOrEmpty(responseBody))
+                        {
+                            // Replace newlines so Unity console shows the full JSON on one line
+                            string flat = responseBody.Replace("\n", " ").Replace("\r", "");
+                            if (flat.Length > 1000) flat = flat.Substring(0, 1000);
+                            UnityEngine.Debug.LogWarning("[CoachChat] API error body (" + responseBody.Length + " chars): " + flat);
+                        }
+
+                        string errorMsg = request.result == UnityWebRequest.Result.ConnectionError
+                            ? ConnectionErrorMessage
+                            : $"Coach Val had a problem: {request.error}";
+
+                        onComplete?.Invoke(errorMsg, true);
+                        yield break;
                     }
 
-                    string errorMsg = request.result == UnityWebRequest.Result.ConnectionError
-                        ? ConnectionErrorMessage
-                        : $"Coach Val had a problem: {request.error}";
+                    // Parse response
+                    string responseText = ParseResponse(request.downloadHandler.text);
 
-                    onComplete?.Invoke(errorMsg, true);
+                    // Add assistant response to history
+                    _history.Add(("assistant", responseText));
+
+                    onComplete?.Invoke(responseText, false);
+                }
+                catch (System.Exception ex)
+                {
+                    UnityEngine.Debug.LogWarning($"[CoachChat] Exception processing response: {ex.Message}");
+                    // Remove the user message since we couldn't complete the exchange
+                    if (_history.Count > 1)
+                        _history.RemoveAt(_history.Count - 1);
+                    onComplete?.Invoke(FallbackMessage, true);
                     yield break;
                 }
-
-                // Parse response
-                string responseText = ParseResponse(request.downloadHandler.text);
-
-                // Add assistant response to history
-                _history.Add(("assistant", responseText));
-
-                onComplete?.Invoke(responseText, false);
             }
         }
 

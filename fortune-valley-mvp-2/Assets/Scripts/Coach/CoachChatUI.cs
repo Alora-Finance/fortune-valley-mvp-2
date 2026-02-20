@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,6 +40,10 @@ namespace FortuneValley.UI
         private GameObject _typingIndicator;
         private GameObject _suggestionsContainer;
         private readonly List<GameObject> _messageBubbles = new List<GameObject>();
+
+        // Safety timeout — unlocks UI if response never arrives
+        private bool _waitingForResponse;
+        private Coroutine _safetyTimeoutCoroutine;
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC API
@@ -413,6 +418,11 @@ namespace FortuneValley.UI
             // Disable input while processing
             SetInputEnabled(false);
             ShowTypingIndicator();
+            _waitingForResponse = true;
+
+            // Safety timeout: unlock UI if response never arrives
+            float timeoutSeconds = (_config != null ? _config.RequestTimeoutSeconds : 30) + 5f;
+            _safetyTimeoutCoroutine = StartCoroutine(SafetyTimeout(timeoutSeconds));
 
             UnityEngine.Debug.Log("[CoachChat] Starting API request...");
             // Send to API
@@ -421,6 +431,13 @@ namespace FortuneValley.UI
 
         private void OnResponseReceived(string response, bool isError)
         {
+            _waitingForResponse = false;
+            if (_safetyTimeoutCoroutine != null)
+            {
+                StopCoroutine(_safetyTimeoutCoroutine);
+                _safetyTimeoutCoroutine = null;
+            }
+
             UnityEngine.Debug.Log($"[CoachChat] Response received (isError={isError}): {response?.Substring(0, Mathf.Min(response?.Length ?? 0, 100))}");
             HideTypingIndicator();
             SetInputEnabled(true);
@@ -438,6 +455,23 @@ namespace FortuneValley.UI
                 _inputField.interactable = enabled;
             if (_sendButton != null)
                 _sendButton.interactable = enabled;
+        }
+
+        /// <summary>
+        /// Safety net: if the API response never arrives, unlock the UI after a timeout.
+        /// Timeout is derived from config (RequestTimeoutSeconds + 5s buffer).
+        /// </summary>
+        private IEnumerator SafetyTimeout(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+
+            if (!_waitingForResponse) yield break;
+
+            UnityEngine.Debug.LogWarning("[CoachChat] Safety timeout — unlocking UI");
+            _waitingForResponse = false;
+            HideTypingIndicator();
+            SetInputEnabled(true);
+            AddCoachMessage("Sorry, the request timed out. Try asking again.");
         }
     }
 }
