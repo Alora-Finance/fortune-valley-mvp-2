@@ -45,6 +45,9 @@ namespace FortuneValley.Core
         private float _lifetimeTotalPrincipalInvested;
         private float _peakPortfolioValue;
 
+        // Per-game sell transaction log (capped at 20 for Coach Val context size)
+        private List<SellTransactionRecord> _sellTransactions = new List<SellTransactionRecord>();
+
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
         // ═══════════════════════════════════════════════════════════════
@@ -117,6 +120,12 @@ namespace FortuneValley.Core
         /// </summary>
         public float PeakPortfolioValue => _peakPortfolioValue;
 
+        /// <summary>
+        /// All sell transactions recorded this game, in order.
+        /// Capped at 20 entries so Coach Val's context stays predictable.
+        /// </summary>
+        public IReadOnlyList<SellTransactionRecord> SellHistory => _sellTransactions;
+
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════
@@ -140,6 +149,7 @@ namespace FortuneValley.Core
             _lifetimeTotalInvestmentsMade = 0;
             _lifetimeTotalPrincipalInvested = 0f;
             _peakPortfolioValue = 0f;
+            _sellTransactions.Clear();
             InitializePrices();
         }
 
@@ -399,11 +409,31 @@ namespace FortuneValley.Core
         /// <summary>
         /// Record realized gain/loss when selling shares.
         /// This accumulates over the game so game-end analysis reflects total performance.
+        /// Also appends a SellTransactionRecord so the recap and Coach Val see the specific trade.
         /// </summary>
         private void RecordRealizedGain(ActiveInvestment inv, int sharesSold, float sellPrice)
         {
             float gainPerShare = sellPrice - inv.AveragePurchasePrice;
             _lifetimeRealizedGains += gainPerShare * sharesSold;
+
+            // Cap at 20 records to keep Coach Val's context predictable
+            if (_sellTransactions.Count < 20)
+            {
+                _sellTransactions.Add(new SellTransactionRecord
+                {
+                    InvestmentName    = inv.Definition.DisplayName,
+                    Category          = inv.Definition.Category.ToString(),
+                    SharesSold        = sharesSold,
+                    SellDay           = _timeManager.CurrentTick,
+                    SellPricePerShare = sellPrice,
+                    CostBasisPerShare = inv.AveragePurchasePrice,
+                    GainOrLoss        = gainPerShare * sharesSold,
+                    // Same formula as ActiveInvestment.PercentageReturn — per-trade return
+                    PercentageReturn  = inv.AveragePurchasePrice > 0
+                                        ? (sellPrice / inv.AveragePurchasePrice - 1f) * 100f
+                                        : 0f
+                });
+            }
         }
     }
 }

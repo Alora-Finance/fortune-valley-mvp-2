@@ -153,6 +153,7 @@ namespace FortuneValley.UI
             GameEvents.OnLotPurchased += HandleLotPurchased;
             GameEvents.OnRivalTargetChanged += HandleRivalTargetChanged;
             GameEvents.OnRivalPurchasedLot += HandleRivalPurchasedLot;
+            GameEvents.OnGameStart += HandleGameStart;
         }
 
         private void OnDisable()
@@ -160,6 +161,7 @@ namespace FortuneValley.UI
             GameEvents.OnLotPurchased -= HandleLotPurchased;
             GameEvents.OnRivalTargetChanged -= HandleRivalTargetChanged;
             GameEvents.OnRivalPurchasedLot -= HandleRivalPurchasedLot;
+            GameEvents.OnGameStart -= HandleGameStart;
         }
 
         private void Update()
@@ -219,6 +221,15 @@ namespace FortuneValley.UI
                 _isRivalTarget = false;
                 UpdateRivalTargetVisual();
             }
+        }
+
+        private void HandleGameStart()
+        {
+            // Reset all local ownership state so visuals reflect a fresh game
+            _currentOwner = Owner.None;
+            _isRivalTarget = false;
+            _daysUntilRivalPurchase = 0;
+            UpdateVisuals();
         }
 
         // ═══════════════════════════════════════════════════════════════

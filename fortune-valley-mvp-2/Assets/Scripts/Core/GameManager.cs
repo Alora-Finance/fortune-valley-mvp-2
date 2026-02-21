@@ -269,7 +269,9 @@ namespace FortuneValley.Core
             // Financial data
             if (_currencyManager != null)
             {
-                summary.FinalNetWorth = _currencyManager.CheckingBalance + _currencyManager.InvestingBalance;
+                // Bug fix: CheckingBalance and InvestingBalance are both aliases for _balance.
+                // Using both added the balance twice. Use Balance (single value) instead.
+                summary.FinalNetWorth = _currencyManager.Balance;
             }
 
             if (_investmentSystem != null)
@@ -279,6 +281,7 @@ namespace FortuneValley.Core
                 summary.InvestmentCount = _investmentSystem.LifetimeTotalInvestmentsMade;
                 summary.PeakPortfolioValue = _investmentSystem.PeakPortfolioValue;
                 summary.TotalPrincipalInvested = _investmentSystem.LifetimeTotalPrincipalInvested;
+                summary.SellHistory.AddRange(_investmentSystem.SellHistory);
             }
 
             if (_restaurantSystem != null)
@@ -287,7 +290,7 @@ namespace FortuneValley.Core
             }
 
             // Add key decision notes based on outcomes
-            AddKeyDecisionNotes(summary, isPlayerWin);
+            KeyDecisionBuilder.Build(summary, isPlayerWin);
 
             // Populate learning reflections
             summary.Headline = LearningReflectionBuilder.BuildHeadline(isPlayerWin, summary);
@@ -296,42 +299,6 @@ namespace FortuneValley.Core
             summary.WhatIfMessage = LearningReflectionBuilder.BuildWhatIfMessage(isPlayerWin, summary);
 
             return summary;
-        }
-
-        /// <summary>
-        /// Add learning-focused notes about key decisions.
-        /// </summary>
-        private void AddKeyDecisionNotes(GameSummary summary, bool isPlayerWin)
-        {
-            // Investment-related decisions
-            if (summary.TotalInvestmentGains > 500)
-            {
-                summary.AddKeyDecision("Investment gains significantly helped your victory!");
-            }
-            else if (summary.TotalInvestmentGains > 100)
-            {
-                summary.AddKeyDecision("Compound interest contributed to your success.");
-            }
-            else if (summary.InvestmentCount == 0)
-            {
-                summary.AddKeyDecision("You didn't use investments - compound interest could have helped!");
-            }
-
-            // Speed of acquisition
-            if (isPlayerWin && summary.DaysPlayed < 100)
-            {
-                summary.AddKeyDecision("Fast victory! Efficient use of resources.");
-            }
-            else if (!isPlayerWin && summary.DaysPlayed > 200)
-            {
-                summary.AddKeyDecision("The rival outpaced you over time.");
-            }
-
-            // Lot ownership patterns
-            if (summary.PlayerLots > 0 && summary.RivalLots > summary.PlayerLots)
-            {
-                summary.AddKeyDecision("The rival bought lots faster than you.");
-            }
         }
 
         private void SetState(GameState newState)

@@ -54,7 +54,10 @@ namespace FortuneValley.Core
             "- Explain why they won/lost, connecting outcomes to financial decisions\n" +
             "- Use simple language (middle school level), 2-4 sentences per response\n" +
             "- Reference their ACTUAL numbers from the data above — never vague generalities\n" +
-            "- Focus on: compound interest, opportunity cost, time value of money, risk vs reward\n\n" +
+            "- Focus on: compound interest, opportunity cost, time value of money, risk vs reward\n" +
+            "- The student has already read the Learning Reflections on screen — do NOT just repeat them verbatim. Use them as a launchpad to ask the student deeper follow-up questions.\n" +
+            "- When the student's first message arrives, open by naming ONE specific number from their game (e.g., investment gains or net worth) to show you know their data.\n" +
+            "- NOTE: \"Total Investment Gains\" includes BOTH realized gains from sells AND unrealized gains/losses on currently held positions — they can point in opposite directions. Use the Sell History and Portfolio sections to explain the breakdown.\n\n" +
             "GAME MECHANICS:\n" +
             "- Restaurant earns steady income each day\n" +
             "- Player can invest in stocks, ETFs, bonds, T-bills (different risk/return profiles)\n" +

@@ -103,6 +103,23 @@ namespace FortuneValley.Core
             }
         }
 
+        /// <summary>
+        /// Restart the game immediately, skipping the title screen and rules carousel.
+        /// Called by the "Play Again" button on the game end screen.
+        /// </summary>
+        public void RestartGame()
+        {
+            // Deactivate the game end panel
+            if (_gameEndPanel != null)
+                _gameEndPanel.gameObject.SetActive(false);
+
+            // HUD stays visible — it's already shown during game end
+
+            // Fires OnGameStart so all systems (LotVisual, CityManager, etc.) reset
+            if (_gameManager != null)
+                _gameManager.RestartGame();
+        }
+
         private void SetHUDVisible(bool visible)
         {
             if (_topFrame != null)

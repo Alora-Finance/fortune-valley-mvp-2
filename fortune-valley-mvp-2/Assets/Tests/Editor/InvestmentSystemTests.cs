@@ -227,5 +227,86 @@ namespace FortuneValley.Tests
             Assert.Less(_system.LifetimeTotalGain, 0f,
                 "LifetimeTotalGain should be negative after selling at loss");
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SELL TRANSACTION HISTORY TESTS
+        // ═══════════════════════════════════════════════════════════════
+
+        [Test]
+        public void SellAllShares_RecordsSellTransaction()
+        {
+            var inv = _system.BuyShares(_stockDef, 5);
+            Assert.IsNotNull(inv, "BuyShares returned null");
+            float buyPrice = inv.AveragePurchasePrice;
+
+            SetField(_stockDef, "_currentPrice", buyPrice * 1.2f);
+            _system.SellAllShares(inv);
+
+            Assert.AreEqual(1, _system.SellHistory.Count, "Should record one transaction");
+            var record = _system.SellHistory[0];
+            Assert.AreEqual("TestStock", record.InvestmentName);
+            Assert.AreEqual("Stock", record.Category);
+            Assert.AreEqual(5, record.SharesSold);
+            Assert.AreEqual(buyPrice, record.CostBasisPerShare, 0.01f);
+            Assert.Greater(record.GainOrLoss, 0f, "Should record a positive gain");
+        }
+
+        [Test]
+        public void SellShares_Partial_RecordsPartialTransaction()
+        {
+            var inv = _system.BuyShares(_stockDef, 10);
+            Assert.IsNotNull(inv, "BuyShares returned null");
+
+            _system.SellShares(inv, 3);
+
+            Assert.AreEqual(1, _system.SellHistory.Count);
+            Assert.AreEqual(3, _system.SellHistory[0].SharesSold,
+                "SharesSold should match requested count, not total shares owned");
+        }
+
+        [Test]
+        public void SellShares_PartialThenFull_RecordsTwoTransactions()
+        {
+            var inv = _system.BuyShares(_stockDef, 10);
+            Assert.IsNotNull(inv, "BuyShares returned null");
+
+            _system.SellShares(inv, 4);
+            _system.SellAllShares(inv);
+
+            Assert.AreEqual(2, _system.SellHistory.Count, "Should record two separate transactions");
+            Assert.AreEqual(4, _system.SellHistory[0].SharesSold, "First sell: 4 shares");
+            Assert.AreEqual(6, _system.SellHistory[1].SharesSold, "Second sell: remaining 6 shares");
+        }
+
+        [Test]
+        public void HandleGameStart_ClearsSellHistory()
+        {
+            var inv = _system.BuyShares(_stockDef, 5);
+            Assert.IsNotNull(inv, "BuyShares returned null");
+            _system.SellAllShares(inv);
+            Assert.AreEqual(1, _system.SellHistory.Count, "Should have a record before restart");
+
+            var method = typeof(InvestmentSystem).GetMethod("HandleGameStart",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            method.Invoke(_system, null);
+
+            Assert.AreEqual(0, _system.SellHistory.Count, "SellHistory should be empty after game restart");
+        }
+
+        [Test]
+        public void SellTransactionRecord_ZeroCostBasis_PercentageReturnIsZero()
+        {
+            var inv = _system.BuyShares(_stockDef, 5);
+            Assert.IsNotNull(inv, "BuyShares returned null");
+
+            // Force cost basis to 0 to test divide-by-zero guard in RecordRealizedGain
+            SetField(inv, "<AveragePurchasePrice>k__BackingField", 0f);
+
+            _system.SellAllShares(inv);
+
+            Assert.AreEqual(1, _system.SellHistory.Count);
+            Assert.AreEqual(0f, _system.SellHistory[0].PercentageReturn, 0.001f,
+                "PercentageReturn should be 0 when cost basis is 0 (guard against divide-by-zero)");
+        }
     }
 }

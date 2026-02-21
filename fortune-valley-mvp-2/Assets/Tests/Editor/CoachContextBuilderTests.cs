@@ -57,11 +57,12 @@ namespace FortuneValley.Tests
             var summary = CreateTestSummary(true);
             string context = CoachContextBuilder.BuildContext(true, summary, null, null);
 
-            // All 7 section headers should be present
+            // All section headers should be present (AVAILABLE INVESTMENTS renamed to INVESTMENTS YOU NEVER TRIED)
             Assert.IsTrue(context.Contains("=== GAME OUTCOME ==="));
             Assert.IsTrue(context.Contains("=== FINANCIAL PERFORMANCE ==="));
             Assert.IsTrue(context.Contains("=== PORTFOLIO AT GAME END ==="));
-            Assert.IsTrue(context.Contains("=== AVAILABLE INVESTMENTS ==="));
+            Assert.IsTrue(context.Contains("=== INVESTMENTS SOLD DURING GAME ==="));
+            Assert.IsTrue(context.Contains("=== INVESTMENTS YOU NEVER TRIED ==="));
             Assert.IsTrue(context.Contains("=== LOT PURCHASE TIMELINE ==="));
             Assert.IsTrue(context.Contains("=== KEY DECISIONS ==="));
             Assert.IsTrue(context.Contains("=== LEARNING REFLECTIONS ==="));
@@ -121,6 +122,7 @@ namespace FortuneValley.Tests
             };
             summary.KeyDecisions = null;
             summary.LotPurchases = null;
+            summary.SellHistory = null;
 
             Assert.DoesNotThrow(() =>
             {
@@ -138,6 +140,78 @@ namespace FortuneValley.Tests
             Assert.IsTrue(context.Contains("Downtown Cafe"), "Should include second lot name");
             Assert.IsTrue(context.Contains("Day 10"), "Should include purchase day");
             Assert.IsTrue(context.Contains("Day 25"), "Should include second purchase day");
+        }
+
+        [Test]
+        public void BuildContext_SellHistory_FiltersPreviouslyHeldFromNeverTried()
+        {
+            // Create a ScriptableObject definition for "TechStock"
+            var techDef = UnityEngine.ScriptableObject.CreateInstance<InvestmentDefinition>();
+            SetField(techDef, "_displayName", "TechStock");
+            SetField(techDef, "_category", InvestmentCategory.Stock);
+            var availableInvestments = new List<InvestmentDefinition> { techDef };
+
+            var summary = CreateTestSummary(true);
+            // Record that TechStock was sold during the game
+            summary.SellHistory.Add(new SellTransactionRecord
+            {
+                InvestmentName = "TechStock",
+                Category       = "Stock",
+                SharesSold     = 3,
+                SellDay        = 20,
+                GainOrLoss     = 50f,
+                PercentageReturn = 10f
+            });
+
+            string context = CoachContextBuilder.BuildContext(true, summary, null, availableInvestments);
+
+            // TechStock was sold so it should NOT appear in "never tried"
+            Assert.IsTrue(context.Contains("Player tried all available investment types."),
+                "TechStock was sold, so the never-tried section should say the player tried everything");
+
+            UnityEngine.Object.DestroyImmediate(techDef);
+        }
+
+        [Test]
+        public void BuildContext_WithSellHistory_IncludesSellDetails()
+        {
+            var summary = CreateTestSummary(true);
+            summary.SellHistory.Add(new SellTransactionRecord
+            {
+                InvestmentName    = "BondFund",
+                Category          = "Bond",
+                SharesSold        = 10,
+                SellDay           = 42,
+                SellPricePerShare = 105f,
+                CostBasisPerShare = 100f,
+                GainOrLoss        = 50f,
+                PercentageReturn  = 5f
+            });
+
+            string context = CoachContextBuilder.BuildContext(true, summary, null, null);
+
+            Assert.IsTrue(context.Contains("Day 42"), "Should include the sell day");
+            Assert.IsTrue(context.Contains("BondFund"), "Should include the investment name");
+            Assert.IsTrue(context.Contains("$50"), "Should include the gain amount");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER — reflection for setting ScriptableObject private fields
+        // ═══════════════════════════════════════════════════════════════
+
+        private static void SetField(object target, string fieldName, object value)
+        {
+            var type = target.GetType();
+            while (type != null)
+            {
+                var field = type.GetField(fieldName,
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Public);
+                if (field != null) { field.SetValue(target, value); return; }
+                type = type.BaseType;
+            }
+            throw new System.Exception($"Field '{fieldName}' not found on {target.GetType().Name}");
         }
     }
 }

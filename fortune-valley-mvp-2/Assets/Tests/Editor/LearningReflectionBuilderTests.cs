@@ -16,6 +16,7 @@ namespace FortuneValley.Tests
             int investCount = 0, int daysPlayed = 100,
             int playerLots = 3, int rivalLots = 2, int totalLots = 6,
             float peakPortfolio = 0f, float spentOnLots = 0f,
+            float totalPrincipalInvested = 0f,
             List<LotPurchaseRecord> lotPurchases = null)
         {
             return new GameSummary
@@ -28,6 +29,7 @@ namespace FortuneValley.Tests
                 TotalLots = totalLots,
                 PeakPortfolioValue = peakPortfolio,
                 TotalSpentOnLots = spentOnLots,
+                TotalPrincipalInvested = totalPrincipalInvested,
                 LotPurchases = lotPurchases ?? new List<LotPurchaseRecord>()
             };
         }
@@ -94,10 +96,13 @@ namespace FortuneValley.Tests
         [Test]
         public void BuildInvestmentInsight_PositiveGains_ShowsCompoundInterest()
         {
-            var s = MakeSummary(gains: 200, peakPortfolio: 1200, daysPlayed: 90, investCount: 2);
+            // gains=200, principal=1000 → ROI = 20%
+            var s = MakeSummary(gains: 200, peakPortfolio: 1200, daysPlayed: 90, investCount: 2,
+                                totalPrincipalInvested: 1000f);
             string result = LearningReflectionBuilder.BuildInvestmentInsight(s);
             Assert.IsTrue(result.Contains("$200"));
             Assert.IsTrue(result.Contains("compound interest"));
+            Assert.IsTrue(result.Contains("20"), "ROI % should be 20 (200/1000 * 100)");
         }
 
         [Test]

@@ -115,6 +115,13 @@ namespace FortuneValley.Core
         /// </summary>
         public List<LotPurchaseRecord> LotPurchases = new List<LotPurchaseRecord>();
 
+        /// <summary>
+        /// Record of every sell transaction made during the game.
+        /// Used by the recap screen and Coach Val to discuss specific trade decisions.
+        /// Capped at 20 entries by InvestmentSystem.
+        /// </summary>
+        public List<SellTransactionRecord> SellHistory = new List<SellTransactionRecord>();
+
         // ═══════════════════════════════════════════════════════════════
         // HELPER METHODS
         // ═══════════════════════════════════════════════════════════════
@@ -161,5 +168,22 @@ namespace FortuneValley.Core
         public float Cost;
         public float IncomeBonus;
         public int PurchasedOnDay;
+    }
+
+    /// <summary>
+    /// Records a single sell transaction for game-end recap and Coach Val context.
+    /// Captured at time of sell so the data survives after the position is removed.
+    /// </summary>
+    [System.Serializable]
+    public struct SellTransactionRecord
+    {
+        public string InvestmentName;    // e.g. "TechCorp"
+        public string Category;          // e.g. "Stock"
+        public int    SharesSold;
+        public int    SellDay;           // tick when sold
+        public float  SellPricePerShare;
+        public float  CostBasisPerShare; // average purchase price at time of sell
+        public float  GainOrLoss;        // (sellPrice - costBasis) * sharesSold
+        public float  PercentageReturn;  // (sellPrice / costBasis - 1) * 100; same formula as ActiveInvestment.PercentageReturn
     }
 }

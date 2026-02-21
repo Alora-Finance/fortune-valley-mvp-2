@@ -45,6 +45,14 @@ namespace FortuneValley.Core
                 sb.AppendLine($"Peak Portfolio Value: ${summary.PeakPortfolioValue:N0}");
                 sb.AppendLine($"Total Principal Invested: ${summary.TotalPrincipalInvested:N0}");
                 sb.AppendLine($"Number of Investments Made: {summary.InvestmentCount}");
+
+                // Break down aggregate gains into realized (sells) vs unrealized (still held)
+                // so Coach Val can explain discrepancies between sell outcomes and total gains.
+                float realizedGains = 0f;
+                if (summary.SellHistory != null)
+                    foreach (var sell in summary.SellHistory) realizedGains += sell.GainOrLoss;
+                sb.AppendLine($"  Realized Gains (sells): ${realizedGains:N0}");
+                sb.AppendLine($"  Unrealized Gains (held): ${summary.TotalInvestmentGains - realizedGains:N0}");
             }
             else
             {
@@ -67,7 +75,7 @@ namespace FortuneValley.Core
                                   $"Cost Basis: ${inv.TotalCostBasis:N0}, " +
                                   $"Current Value: ${inv.CurrentValue:N0}, " +
                                   $"Gain: {gainSign}${inv.TotalGain:N0} ({inv.PercentageReturn:F1}%), " +
-                                  $"Held: {inv.TicksHeld} days");
+                                  $"Held: {inv.TicksHeld} days (bought Day {inv.CreatedAtTick})");
                 }
             }
             else
@@ -77,19 +85,51 @@ namespace FortuneValley.Core
 
             sb.AppendLine();
 
-            // ── AVAILABLE INVESTMENTS ──
-            sb.AppendLine("=== AVAILABLE INVESTMENTS ===");
+            // ── INVESTMENTS SOLD DURING GAME ──
+            sb.AppendLine("=== INVESTMENTS SOLD DURING GAME ===");
+            if (summary != null && summary.SellHistory != null && summary.SellHistory.Count > 0)
+            {
+                foreach (var sellRecord in summary.SellHistory)
+                {
+                    string sign = sellRecord.GainOrLoss >= 0 ? "+" : "";
+                    sb.AppendLine($"- Day {sellRecord.SellDay}: Sold {sellRecord.SharesSold} shares of " +
+                                  $"{sellRecord.InvestmentName} ({sellRecord.Category}) " +
+                                  $"at ${sellRecord.SellPricePerShare:F2}/share — " +
+                                  $"{sign}${sellRecord.GainOrLoss:N0} ({sellRecord.PercentageReturn:F1}%)");
+                }
+            }
+            else
+            {
+                sb.AppendLine("Player did not sell any investments during the game.");
+            }
+
+            sb.AppendLine();
+
+            // ── INVESTMENTS YOU NEVER TRIED ──
+            // Build exclusion set from BOTH active holdings AND sell history so
+            // fully-sold positions are also filtered out.
+            sb.AppendLine("=== INVESTMENTS YOU NEVER TRIED ===");
             if (availableInvestments != null && availableInvestments.Count > 0)
             {
+                var triedNames = new System.Collections.Generic.HashSet<string>();
+                if (activeInvestments != null)
+                    foreach (var inv in activeInvestments)
+                        if (inv?.Definition != null) triedNames.Add(inv.Definition.DisplayName);
+                if (summary?.SellHistory != null)
+                    foreach (var sellRecord in summary.SellHistory)
+                        if (sellRecord.InvestmentName != null) triedNames.Add(sellRecord.InvestmentName);
+
+                bool anyUntried = false;
                 foreach (var def in availableInvestments)
                 {
-                    if (def == null) continue;
-
+                    if (def == null || triedNames.Contains(def.DisplayName)) continue;
+                    anyUntried = true;
                     sb.AppendLine($"- {def.DisplayName} ({def.Category}): " +
                                   $"Risk={def.RiskLevel}, " +
                                   $"Expected Return={def.AnnualReturnRate * 100:F1}%/year, " +
                                   $"Fixed={def.HasFixedReturn}");
                 }
+                if (!anyUntried) sb.AppendLine("Player tried all available investment types.");
             }
             else
             {

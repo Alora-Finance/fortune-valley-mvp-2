@@ -42,8 +42,9 @@ namespace FortuneValley.Core
 
             if (s.TotalInvestmentGains > 0)
             {
-                float returnPct = s.PeakPortfolioValue > 0
-                    ? (s.TotalInvestmentGains / (s.PeakPortfolioValue - s.TotalInvestmentGains)) * 100f
+                // ROI = gains / principal invested (not peak portfolio, which is a meaningless denominator)
+                float returnPct = s.TotalPrincipalInvested > 0
+                    ? (s.TotalInvestmentGains / s.TotalPrincipalInvested) * 100f
                     : 0f;
 
                 return $"Your investments earned ${s.TotalInvestmentGains:N0} " +

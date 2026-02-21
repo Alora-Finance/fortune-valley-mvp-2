@@ -276,8 +276,20 @@ namespace FortuneValley.UI.Panels
 
         private void OnPlayAgainClicked()
         {
-            Hide();
-            ReturnToTitle();
+            // Always hide ourselves first — don't rely on GameFlowController's Inspector wiring
+            gameObject.SetActive(false);
+
+            // Restart immediately — skip title screen and rules carousel
+            var flowController = FindFirstObjectByType<GameFlowController>();
+            if (flowController != null)
+            {
+                flowController.RestartGame();
+            }
+            else
+            {
+                // Fallback: fire restart directly
+                GameEvents.RaiseGameStart();
+            }
         }
 
         private void OnMainMenuClicked()
