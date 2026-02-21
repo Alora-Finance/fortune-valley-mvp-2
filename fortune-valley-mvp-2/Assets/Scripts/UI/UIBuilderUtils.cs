@@ -75,6 +75,16 @@ namespace FortuneValley.UI
         }
 
         /// <summary>
+        /// Assigns text only if the value has changed, avoiding unnecessary TMP geometry rebuilds.
+        /// Safe to call every tick on stable fields (risk label, holdings list, etc.)
+        /// </summary>
+        public static void SetTextIfChanged(TextMeshProUGUI tmp, string value)
+        {
+            if (tmp == null || tmp.text == value) return;
+            tmp.text = value;
+        }
+
+        /// <summary>
         /// Create a Button with Image background and TMP label.
         /// </summary>
         public static Button CreateButton(string name, Transform parent,

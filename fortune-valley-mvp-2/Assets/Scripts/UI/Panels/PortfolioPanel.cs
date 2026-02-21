@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -8,11 +9,11 @@ using FortuneValley.Core;
 namespace FortuneValley.UI.Panels
 {
     /// <summary>
-    /// Portfolio panel with scene-designed layout.
-    /// Left side: investment buttons grouped by category (Stocks, Bonds+Bills, ETFs).
-    /// Right side: selected asset details + buy/sell controls.
-    /// All UI elements are found by path — no manual inspector wiring needed
-    /// beyond the component being on the PortfolioPanel GameObject.
+    /// Portfolio panel with two-tab layout (Overview / Invest).
+    /// Overview tab: summary stats + current holdings.
+    /// Invest tab:   stock rows wired by label → InvestmentDefinition, with buy/sell detail panel.
+    /// All UI paths are relative to this GameObject — no manual inspector wiring needed
+    /// beyond the serialized dependencies at the top.
     /// </summary>
     public class PortfolioPanel : UIPanel
     {
@@ -32,24 +33,38 @@ namespace FortuneValley.UI.Panels
         // RUNTIME REFERENCES (found by path)
         // ═══════════════════════════════════════════════════════════════
 
-        // Summary stats
+        // Tab panel roots
+        private GameObject _overviewPanel;
+        private GameObject _investPanel;
+
+        // Tab buttons + cached Image refs (avoid GetComponent on every switch)
+        private Button _tab1Button;
+        private Button _tab2Button;
+        private Image  _tab1Image;
+        private Image  _tab2Image;
+        private Color  _tabNormalColor;
+        private Color  _tabActiveColor = new Color(0.35f, 0.55f, 0.75f);
+
+        // Overview stat texts
         private TextMeshProUGUI _balanceText;
+        private TextMeshProUGUI _investmentsValueText;
         private TextMeshProUGUI _totalGainText;
         private TextMeshProUGUI _portfolioLevelText;
+        private TextMeshProUGUI _currentHoldingsText;
 
-        // Buy/Sell panel texts
+        // Invest panel containers (existing scene row children)
+        private Transform _highRiskContainer;   // HighRiskStocks/Companies
+        private Transform _lowRiskContainer;    // LowRiskStocks/Companies
+
+        // Detail panel texts
         private TextMeshProUGUI _selectedAssetText;
         private TextMeshProUGUI _priceText;
         private TextMeshProUGUI _priceChangeText;
-        private TextMeshProUGUI _riskLevelText;
         private TextMeshProUGUI _sharesOwnedText;
+        private TextMeshProUGUI _riskLevelText;
+        private TextMeshProUGUI _descriptionText;
 
-        // Position info (created programmatically)
-        private TextMeshProUGUI _costBasisText;
-        private TextMeshProUGUI _marketValueText;
-        private TextMeshProUGUI _gainLossText;
-
-        // Buttons
+        // Action buttons
         private Button _closeButton;
         private Button _buyButton;
         private Button _sellButton;
@@ -58,25 +73,11 @@ namespace FortuneValley.UI.Panels
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
-        private InvestmentDefinition _selectedDef;
-        private bool _isBuying = true; // true = buy mode, false = sell mode
-        private Dictionary<Button, InvestmentDefinition> _investmentButtons
-            = new Dictionary<Button, InvestmentDefinition>();
-        private Color _normalButtonColor;
-        private Color _selectedButtonColor = new Color(0.35f, 0.55f, 0.75f);
-        private Button _highlightedButton;
-        private Color _buyButtonNormalColor;
-        private Color _sellButtonNormalColor;
-
-        // Quantity button tinting (match buy/sell mode color)
-        private List<Image> _quantityButtonImages = new List<Image>();
-        private List<Color> _quantityButtonNormalColors = new List<Color>();
-
-        private int _ticksSinceRefresh;
-        private const int REFRESH_INTERVAL = 5;
         private bool _initialized;
+        private int _activeTabIndex; // 0 = Overview, 1 = Invest
+        private InvestmentDefinition _selectedDefinition;
 
-        // Track previous prices for daily change display
+        // Track previous prices per tick for daily change display
         private Dictionary<InvestmentDefinition, float> _previousPrices
             = new Dictionary<InvestmentDefinition, float>();
 
@@ -94,10 +95,16 @@ namespace FortuneValley.UI.Panels
             if (_initialized) return;
 
             FindDependencies();
+            if (_investmentSystem == null || _currencyManager == null)
+            {
+                UnityEngine.Debug.LogError("[PortfolioPanel] Missing dependencies — will retry on next OnShow()");
+                return; // Don't set _initialized — allow retry
+            }
+
             FindUIElements();
-            WireInvestmentButtons();
+            WireTabButtons();
             WireActionButtons();
-            ClearSelectedAssetDisplay();
+            WireInvestmentButtons(); // Wire existing scene rows once at startup
 
             _initialized = true;
         }
@@ -122,517 +129,342 @@ namespace FortuneValley.UI.Panels
             GameEvents.OnCheckingBalanceChanged -= HandleBalanceChanged;
         }
 
-        /// <summary>
-        /// Update balance text immediately when currency changes,
-        /// so the panel stays in sync with the HUD.
-        /// </summary>
-        private void HandleBalanceChanged(float newBalance, float delta)
-        {
-            if (!IsVisible || _balanceText == null) return;
-            _balanceText.text = $"Balance: ${newBalance:N0}";
-        }
-
-        private void HandleTick(int tickNumber)
-        {
-            if (!IsVisible) return;
-
-            // Update selected asset (price, daily change) every tick
-            UpdateSelectedAssetDisplay();
-
-            // Snapshot prices AFTER display so next tick shows true 1-day change
-            SnapshotPrices();
-
-            _ticksSinceRefresh++;
-            if (_ticksSinceRefresh >= REFRESH_INTERVAL)
-            {
-                _ticksSinceRefresh = 0;
-                RefreshLiveData();
-            }
-        }
-
         // ═══════════════════════════════════════════════════════════════
-        // PANEL OVERRIDES
+        // PANEL OVERRIDE
         // ═══════════════════════════════════════════════════════════════
 
         protected override void OnShow()
         {
             Initialize();
-            _ticksSinceRefresh = 0;
-
-            // Snapshot current prices for change tracking
             SnapshotPrices();
-
-            RefreshLiveData();
-
-            // Restore quantity button tint if an asset is already selected
-            if (_selectedDef != null)
-                UpdateQuantityButtonColors();
+            SwitchToTab(0); // always open to Overview; internally calls RefreshOverviewPanel()
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // UI ELEMENT DISCOVERY (by path)
+        // UI ELEMENT DISCOVERY (by path from this transform)
         // ═══════════════════════════════════════════════════════════════
 
         private void FindUIElements()
         {
-            // Summary stats
-            _balanceText = FindText("SummaryStatistics/BalanceText");
-            _totalGainText = FindText("SummaryStatistics/TotalGainText");
-            _portfolioLevelText = FindText("SummaryStatistics/PortfolioLevelText");
+            // Tab buttons
+            _tab1Button = FindButton("TopFrame/Tab1");
+            _tab2Button = FindButton("TopFrame/Tab2");
+            _tab1Image  = _tab1Button?.GetComponent<Image>();
+            _tab2Image  = _tab2Button?.GetComponent<Image>();
+            _tabNormalColor = _tab1Image != null ? _tab1Image.color : new Color(0.2f, 0.2f, 0.2f);
 
-            // Close button — try multiple paths for scene naming flexibility
-            _closeButton = FindButton("TopFrame/Button_Close")
-                        ?? FindButton("TopFrame/CloseButton")
-                        ?? FindButton("Header/CloseButton")
-                        ?? FindButton("CloseButton");
+            // Close button
+            _closeButton = FindButton("TopFrame/Button_Close");
 
-            // Buy/Sell panel
-            var buySellPath = "InvestmentInfoPanel/BuySellPanel";
-            _selectedAssetText = FindText($"{buySellPath}/SelectedAssetText");
-            _priceText = FindText($"{buySellPath}/SelectedAssetInfo/PriceText");
-            _priceChangeText = FindText($"{buySellPath}/SelectedAssetInfo/PriceChangeText");
-            _riskLevelText = FindText($"{buySellPath}/SelectedAssetInfo/RiskLevelText");
-            _sharesOwnedText = FindText($"{buySellPath}/SelectedAssetInfo/SharesOwnedText")
-                            ?? FindText($"{buySellPath}/SharesOwnedText");
+            // Panel roots
+            var overviewT = transform.Find("OverviewPanel");
+            _overviewPanel = overviewT != null ? overviewT.gameObject : null;
+            var investT = transform.Find("InvestPanel");
+            _investPanel = investT != null ? investT.gameObject : null;
 
-            // Position info texts (created programmatically below shares owned)
-            Transform infoParent = _sharesOwnedText != null
-                ? _sharesOwnedText.transform.parent
-                : transform.Find($"{buySellPath}/SelectedAssetInfo");
-            if (infoParent != null)
-            {
-                _costBasisText = CreatePositionInfoText("CostBasisText", infoParent);
-                _marketValueText = CreatePositionInfoText("MarketValueText", infoParent);
-                _gainLossText = CreatePositionInfoText("GainLossText", infoParent);
-            }
+            // Overview stats
+            var statsBase = "OverviewPanel/Stats_Group/SummaryStatistics";
+            _balanceText          = FindText($"{statsBase}/BalanceText");
+            _investmentsValueText = FindText($"{statsBase}/InvestmentsValue");
+            _totalGainText        = FindText($"{statsBase}/TotalGainText");
+            _portfolioLevelText   = FindText($"{statsBase}/PortfolioLevelText");
+            _currentHoldingsText  = FindText($"{statsBase}/CurrentHoldings");
 
-            // Buy/Sell mode buttons
-            _buyButton = FindButton($"{buySellPath}/Buy or Sell/ButtonGrid/BuyButton");
-            _sellButton = FindButton($"{buySellPath}/Buy or Sell/ButtonGrid/SellButton");
+            // Invest panel containers
+            var optBase = "InvestPanel/InvestmentInfoPanel/InvestmentOptions";
+            var highRiskT = transform.Find($"{optBase}/HighRiskStocks/Companies");
+            _highRiskContainer = highRiskT;
+            var lowRiskT = transform.Find($"{optBase}/LowRiskStocks/Companies");
+            _lowRiskContainer = lowRiskT;
 
-            // Store normal colors for highlighting
-            if (_buyButton != null)
-                _buyButtonNormalColor = _buyButton.GetComponent<Image>()?.color ?? Color.white;
-            if (_sellButton != null)
-                _sellButtonNormalColor = _sellButton.GetComponent<Image>()?.color ?? Color.white;
+            // Detail panel texts
+            var bsp = "InvestPanel/InvestmentInfoPanel/BuySellPanel";
+            _selectedAssetText = FindText($"{bsp}/SelectedAssetText");
+            _priceText         = FindText($"{bsp}/SelectedAssetInfo/PriceText");
+            _priceChangeText   = FindText($"{bsp}/SelectedAssetInfo/PriceChangeText");
+            _sharesOwnedText   = FindText($"{bsp}/SelectedAssetInfo/SharesOwnedText");
+            _riskLevelText     = FindText($"{bsp}/SelectedAssetInfo/RiskLevelText");
+            _descriptionText   = FindText($"{bsp}/Buy or Sell/DescriptionText");
+
+            // Action buttons
+            _buyButton  = FindButton($"{bsp}/Buy or Sell/ButtonGrid/BuyButton");
+            _sellButton = FindButton($"{bsp}/Buy or Sell/ButtonGrid/SellButton");
         }
 
-        /// <summary>
-        /// Discovers all buttons in the 3 category grids and maps them
-        /// to InvestmentDefinitions. Updates button labels to match definition names.
-        /// Hides extra buttons if a grid has more buttons than definitions.
-        /// </summary>
-        private void WireInvestmentButtons()
+        // ═══════════════════════════════════════════════════════════════
+        // TAB SWITCHING
+        // ═══════════════════════════════════════════════════════════════
+
+        private void WireTabButtons()
         {
-            if (_investmentSystem == null) return;
-
-            var optionsRoot = transform.Find("InvestmentInfoPanel/InvestmentOptions");
-            if (optionsRoot == null) return;
-
-            // Map each grid path to the investment categories it shows
-            var gridMappings = new (string path, InvestmentCategory[] categories)[]
-            {
-                ("Stocks/ButtonGrid", new[] { InvestmentCategory.Stock }),
-                ("Bonds+Bills/ButtonGrid", new[] { InvestmentCategory.Bond, InvestmentCategory.TBill }),
-                ("ETFs + Mutual Funds/ButtonGrid", new[] { InvestmentCategory.ETF }),
-            };
-
-            foreach (var (path, categories) in gridMappings)
-            {
-                Transform grid = optionsRoot.Find(path);
-                if (grid == null) continue;
-
-                // Get definitions for these categories, sorted by name
-                var defs = _investmentSystem.AvailableInvestments
-                    .Where(d => categories.Contains(d.Category))
-                    .OrderBy(d => d.DisplayName)
-                    .ToList();
-
-                for (int i = 0; i < grid.childCount; i++)
-                {
-                    Transform child = grid.GetChild(i);
-                    Button btn = child.GetComponent<Button>();
-                    if (btn == null) continue;
-
-                    if (i < defs.Count)
-                    {
-                        // Assign definition to this button
-                        var def = defs[i];
-                        _investmentButtons[btn] = def;
-
-                        // Update button label to show the definition's name
-                        var label = child.GetComponentInChildren<TextMeshProUGUI>();
-                        if (label != null)
-                            label.text = def.DisplayName;
-
-                        // Store normal color from first button
-                        if (i == 0 && _normalButtonColor == default)
-                        {
-                            var img = child.GetComponent<Image>();
-                            if (img != null)
-                                _normalButtonColor = img.color;
-                        }
-
-                        // Wire click handler
-                        var capturedDef = def;
-                        var capturedBtn = btn;
-                        btn.onClick.AddListener(() => OnInvestmentSelected(capturedDef, capturedBtn));
-                    }
-                    else
-                    {
-                        // No definition for this button — hide it
-                        child.gameObject.SetActive(false);
-                    }
-                }
-            }
+            _tab1Button?.onClick.AddListener(() => SwitchToTab(0));
+            _tab2Button?.onClick.AddListener(() => SwitchToTab(1));
         }
+
+        private void SwitchToTab(int index)
+        {
+            _activeTabIndex = index;
+            _overviewPanel?.SetActive(index == 0);
+            _investPanel?.SetActive(index == 1);
+
+            if (_tab1Image != null) _tab1Image.color = index == 0 ? _tabActiveColor : _tabNormalColor;
+            if (_tab2Image != null) _tab2Image.color = index == 1 ? _tabActiveColor : _tabNormalColor;
+
+            if (index == 0) RefreshOverviewPanel();
+            else            RefreshDetailPanel();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // BUY / SELL WIRING
+        // ═══════════════════════════════════════════════════════════════
 
         private void WireActionButtons()
         {
-            // Close
             if (_closeButton != null)
             {
                 _closeButton.onClick.AddListener(OnCloseButtonClicked);
-
-                // Ensure the button can receive clicks
                 if (_closeButton.targetGraphic == null)
-                {
-                    var img = _closeButton.GetComponent<Image>();
-                    if (img != null)
-                        _closeButton.targetGraphic = img;
-                    else
-                        UnityEngine.Debug.LogWarning("[PortfolioPanel] Close button has no Image — clicks may not register");
-                }
+                    _closeButton.targetGraphic = _closeButton.GetComponent<Image>();
             }
             else
             {
-                UnityEngine.Debug.LogError("[PortfolioPanel] Close button not found — cannot wire close action");
+                UnityEngine.Debug.LogWarning("[PortfolioPanel] Close button not found");
             }
 
-            // Buy/Sell mode toggle
-            if (_buyButton != null)
-                _buyButton.onClick.AddListener(() => SetTradeMode(true));
-            if (_sellButton != null)
-                _sellButton.onClick.AddListener(() => SetTradeMode(false));
-
-            // Quantity buttons — found by path
-            var qtyGridPath = "InvestmentInfoPanel/BuySellPanel/Quantity/ButtonGrid";
-            Transform qtyGrid = transform.Find(qtyGridPath);
-            if (qtyGrid == null) return;
-
-            WireQuantityButton(qtyGrid, "x1Button", 1);
-            WireQuantityButton(qtyGrid, "x5Button", 5);
-            WireQuantityButton(qtyGrid, "x50Button", 50);
-
-            // Max button uses special handler
-            Transform maxGO = qtyGrid.Find("MaxButton");
-            if (maxGO != null)
-            {
-                Button maxBtn = maxGO.GetComponent<Button>();
-                if (maxBtn != null)
-                    maxBtn.onClick.AddListener(ExecuteTradeMax);
-            }
-
-            // Capture Image components for quantity button tinting
-            CaptureQuantityButtonImage(qtyGrid.Find("x1Button"));
-            CaptureQuantityButtonImage(qtyGrid.Find("x5Button"));
-            CaptureQuantityButtonImage(qtyGrid.Find("x50Button"));
-            CaptureQuantityButtonImage(maxGO);
+            _buyButton?.onClick.AddListener(OnBuyButtonClicked);
+            _sellButton?.onClick.AddListener(OnSellButtonClicked);
         }
 
-        private void CaptureQuantityButtonImage(Transform go)
+        private void OnBuyButtonClicked()
         {
-            if (go == null) return;
-            var img = go.GetComponent<Image>();
-            if (img == null) return;
-            _quantityButtonImages.Add(img);
-            _quantityButtonNormalColors.Add(img.color);
-        }
+            if (_selectedDefinition == null) return;
 
-        private void WireQuantityButton(Transform grid, string name, int quantity)
-        {
-            Transform go = grid.Find(name);
-            if (go == null) return;
-
-            Button btn = go.GetComponent<Button>();
-            if (btn == null) return;
-
-            int capturedQty = quantity;
-            btn.onClick.AddListener(() => ExecuteTrade(capturedQty));
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // INVESTMENT SELECTION
-        // ═══════════════════════════════════════════════════════════════
-
-        private void OnInvestmentSelected(InvestmentDefinition def, Button btn)
-        {
-            // Unhighlight previous button
-            if (_highlightedButton != null)
+            var result = _investmentSystem.BuyShares(_selectedDefinition, 1);
+            if (result == null)
             {
-                var prevImg = _highlightedButton.GetComponent<Image>();
-                if (prevImg != null)
-                    prevImg.color = _normalButtonColor;
-            }
-
-            _selectedDef = def;
-            _highlightedButton = btn;
-            _isBuying = true; // Reset to buy mode on new selection
-
-            // Highlight selected button
-            var img = btn.GetComponent<Image>();
-            if (img != null)
-                img.color = _selectedButtonColor;
-
-            UpdateSelectedAssetDisplay();
-            UpdateTradeModeHighlight();
-            UpdateQuantityButtonColors();
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // TRADE MODE (Buy / Sell)
-        // ═══════════════════════════════════════════════════════════════
-
-        private void SetTradeMode(bool buying)
-        {
-            _isBuying = buying;
-            UpdateTradeModeHighlight();
-            UpdateQuantityButtonColors();
-        }
-
-        private void UpdateTradeModeHighlight()
-        {
-            // Highlight the active mode button
-            if (_buyButton != null)
-            {
-                var buyImg = _buyButton.GetComponent<Image>();
-                if (buyImg != null)
-                    buyImg.color = _isBuying ? _selectedButtonColor : _buyButtonNormalColor;
-            }
-            if (_sellButton != null)
-            {
-                var sellImg = _sellButton.GetComponent<Image>();
-                if (sellImg != null)
-                    sellImg.color = !_isBuying ? _selectedButtonColor : _sellButtonNormalColor;
-            }
-        }
-
-        /// <summary>
-        /// Tint quantity buttons to a lightened version of the active buy/sell color.
-        /// </summary>
-        private void UpdateQuantityButtonColors()
-        {
-            Color baseColor = _isBuying ? _buyButtonNormalColor : _sellButtonNormalColor;
-            Color tint = Color.Lerp(baseColor, Color.white, 0.3f);
-
-            for (int i = 0; i < _quantityButtonImages.Count; i++)
-            {
-                if (_quantityButtonImages[i] != null)
-                    _quantityButtonImages[i].color = tint;
-            }
-        }
-
-        /// <summary>
-        /// Restore quantity buttons to their original neutral colors.
-        /// </summary>
-        private void RestoreQuantityButtonColors()
-        {
-            for (int i = 0; i < _quantityButtonImages.Count; i++)
-            {
-                if (i < _quantityButtonNormalColors.Count && _quantityButtonImages[i] != null)
-                    _quantityButtonImages[i].color = _quantityButtonNormalColors[i];
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // TRADE EXECUTION
-        // ═══════════════════════════════════════════════════════════════
-
-        private void ExecuteTrade(int quantity)
-        {
-            if (_selectedDef == null || _investmentSystem == null) return;
-
-            if (_isBuying)
-            {
-                _investmentSystem.BuyShares(_selectedDef, quantity);
-            }
-            else
-            {
-                var active = GetActiveInvestment(_selectedDef);
-                if (active != null)
-                    _investmentSystem.SellShares(active, quantity);
-            }
-
-            UpdateSelectedAssetDisplay();
-            UpdateSummary();
-        }
-
-        private void ExecuteTradeMax()
-        {
-            if (_selectedDef == null || _investmentSystem == null) return;
-
-            if (_isBuying)
-            {
-                if (_currencyManager == null) return;
-                float price = _selectedDef.CurrentPrice;
-                if (price <= 0) return;
-
-                int maxShares = Mathf.FloorToInt(_currencyManager.Balance / price);
-                if (maxShares > 0)
-                    _investmentSystem.BuyShares(_selectedDef, maxShares);
-            }
-            else
-            {
-                var active = GetActiveInvestment(_selectedDef);
-                if (active != null)
-                    _investmentSystem.SellAllShares(active);
-            }
-
-            UpdateSelectedAssetDisplay();
-            UpdateSummary();
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // DISPLAY UPDATES
-        // ═══════════════════════════════════════════════════════════════
-
-        private void RefreshLiveData()
-        {
-            UpdateSummary();
-            UpdateSelectedAssetDisplay();
-        }
-
-        private void UpdateSummary()
-        {
-            if (_investmentSystem == null || _currencyManager == null) return;
-
-            float balance = _currencyManager.Balance;
-            float portfolioValue = _investmentSystem.TotalPortfolioValue;
-            float totalGain = _investmentSystem.LifetimeTotalGain;
-
-            if (_balanceText != null)
-                _balanceText.text = $"Balance: ${balance:N0}";
-
-            if (_totalGainText != null)
-            {
-                string prefix = totalGain >= 0 ? "+" : "";
-                _totalGainText.text = $"Total Earnings: {prefix}${totalGain:N0}";
-                _totalGainText.color = totalGain >= 0 ? _gainColor : _lossColor;
-            }
-
-            // Portfolio risk level: weighted average of held investments
-            if (_portfolioLevelText != null)
-                _portfolioLevelText.text = $"Portfolio Risk Level:\n{GetPortfolioRiskLabel()}";
-        }
-
-        private void UpdateSelectedAssetDisplay()
-        {
-            if (_selectedDef == null)
-            {
-                ClearSelectedAssetDisplay();
+                UnityEngine.Debug.LogWarning("[PortfolioPanel] BuyShares returned null — refreshing state");
+                RefreshDetailPanel();
                 return;
             }
 
-            // Asset name
-            if (_selectedAssetText != null)
-                _selectedAssetText.text = $"Selected Asset: {_selectedDef.DisplayName}";
+            RefreshDetailPanel();
+            RefreshOverviewPanel();
+        }
 
-            // Current price
-            if (_priceText != null)
-                _priceText.text = $"Price: ${_selectedDef.CurrentPrice:F2}";
+        private void OnSellButtonClicked()
+        {
+            if (_selectedDefinition == null) return;
 
-            // Daily change (since last refresh)
-            if (_priceChangeText != null)
+            var inv = GetActiveInvestment(_selectedDefinition);
+            if (inv != null)
+                _investmentSystem.SellShares(inv, 1);
+
+            RefreshDetailPanel();
+            RefreshOverviewPanel();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INVESTMENT BUTTON WIRING (scene rows → definitions, once at init)
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Traverse existing stock row GameObjects in each Companies container.
+        /// Reads each row's TitleText to find the matching InvestmentDefinition by DisplayName.
+        /// Wires the row's Button child to OnInvestmentSelected with that definition.
+        /// Called once inside Initialize() — scene rows never change at runtime.
+        /// </summary>
+        private void WireInvestmentButtons()
+        {
+            WireContainerButtons(_highRiskContainer);
+            WireContainerButtons(_lowRiskContainer);
+        }
+
+        private void WireContainerButtons(Transform container)
+        {
+            if (container == null || _investmentSystem == null) return;
+
+            for (int i = 0; i < container.childCount; i++)
             {
-                float change = GetPriceChangePercent(_selectedDef);
-                string prefix = change >= 0 ? "+" : "";
-                _priceChangeText.text = $"Daily Change: {prefix}{change:F2}%";
+                Transform row = container.GetChild(i);
+
+                // Read the label from the TitleText child — key for definition lookup
+                var titleText = row.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+                string rowLabel = titleText != null ? titleText.text.Trim() : row.name;
+
+                var def = FindDefinitionByLabel(rowLabel);
+                if (def == null)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[PortfolioPanel] No InvestmentDefinition found for row label '{rowLabel}'. " +
+                        $"Ensure a Stock definition's DisplayName matches this label.");
+                    continue;
+                }
+
+                // Find the Button child — expected to be named "Button"
+                var btn = row.Find("Button")?.GetComponent<Button>();
+                if (btn == null)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[PortfolioPanel] Row '{rowLabel}' has no Button child named 'Button'.");
+                    continue;
+                }
+
+                var capturedDef = def; // closure-safe capture in loop
+                btn.onClick.AddListener(() => OnInvestmentSelected(capturedDef));
+            }
+        }
+
+        /// <summary>
+        /// Find a Stock definition whose DisplayName matches the given label.
+        /// Tries exact match first, then case-insensitive contains as fallback.
+        /// </summary>
+        private InvestmentDefinition FindDefinitionByLabel(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label)) return null;
+
+            var stocks = _investmentSystem.AvailableInvestments
+                .Where(d => d.Category == InvestmentCategory.Stock);
+
+            // Exact match (case-insensitive)
+            var match = stocks.FirstOrDefault(d =>
+                string.Equals(d.DisplayName, label, System.StringComparison.OrdinalIgnoreCase));
+            if (match != null) return match;
+
+            // Fallback: contains match (e.g. scene says "AMZN", def says "AMZN Stock")
+            return stocks.FirstOrDefault(d =>
+                d.DisplayName.IndexOf(label, System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                label.IndexOf(d.DisplayName, System.StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private void OnInvestmentSelected(InvestmentDefinition def)
+        {
+            _selectedDefinition = def;
+            RefreshDetailPanel();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // OVERVIEW PANEL REFRESH
+        // ═══════════════════════════════════════════════════════════════
+
+        private void RefreshOverviewPanel()
+        {
+            if (_investmentSystem == null || _currencyManager == null) return;
+
+            float balance      = _currencyManager.Balance;
+            float portfolioVal = _investmentSystem.TotalPortfolioValue;
+            float totalGain    = _investmentSystem.TotalGain;
+            var   holdings     = _investmentSystem.ActiveInvestments;
+
+            UIBuilderUtils.SetTextIfChanged(_balanceText,          $"Balance: ${balance:N0}");
+            UIBuilderUtils.SetTextIfChanged(_investmentsValueText, $"Invested: ${portfolioVal:N0}");
+
+            string gainStr = $"Total Gain: {(totalGain >= 0 ? "+" : "")}${totalGain:N0}";
+            UIBuilderUtils.SetTextIfChanged(_totalGainText, gainStr);
+            if (_totalGainText != null)
+                _totalGainText.color = totalGain >= 0 ? _gainColor : _lossColor;
+
+            UIBuilderUtils.SetTextIfChanged(_portfolioLevelText,
+                $"Risk: {PortfolioPanelLogic.GetPortfolioRiskLabel(holdings)}");
+            UIBuilderUtils.SetTextIfChanged(_currentHoldingsText,
+                PortfolioPanelLogic.BuildHoldingsSummary(holdings));
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // DETAIL PANEL REFRESH
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>Shared price/change/affordability update used by both RefreshDetailPanel and UpdateDetailPriceTick.</summary>
+        private void UpdatePriceDisplay()
+        {
+            if (_selectedDefinition == null) return;
+
+            UIBuilderUtils.SetTextIfChanged(_priceText, $"Price: ${_selectedDefinition.CurrentPrice:F2}");
+
+            float change = GetPriceChangePercent(_selectedDefinition);
+            string changeStr = $"Change: {(change >= 0 ? "+" : "")}{change:F2}%";
+            UIBuilderUtils.SetTextIfChanged(_priceChangeText, changeStr);
+            if (_priceChangeText != null)
                 _priceChangeText.color = change >= 0 ? _gainColor : _lossColor;
+
+            if (_buyButton != null && _currencyManager != null)
+                _buyButton.interactable = _currencyManager.CanAfford(_selectedDefinition.CurrentPrice);
+        }
+
+        private void RefreshDetailPanel()
+        {
+            if (_selectedDefinition == null)
+            {
+                // Placeholder state — no investment selected
+                UIBuilderUtils.SetTextIfChanged(_selectedAssetText, "Select an investment");
+                UIBuilderUtils.SetTextIfChanged(_priceText,         "Price: $---");
+                UIBuilderUtils.SetTextIfChanged(_priceChangeText,   "Change: ---%");
+                UIBuilderUtils.SetTextIfChanged(_sharesOwnedText,   "Owned: 0");
+                UIBuilderUtils.SetTextIfChanged(_riskLevelText,     "Risk: ---");
+                UIBuilderUtils.SetTextIfChanged(_descriptionText,   "Select a stock to see details.");
+                if (_priceChangeText != null) _priceChangeText.color = Color.white;
+                if (_riskLevelText   != null) _riskLevelText.color   = Color.white;
+                if (_buyButton       != null) _buyButton.interactable = false;
+                if (_sellButton      != null) _sellButton.gameObject.SetActive(false);
+                return;
             }
 
-            // Risk level
+            UIBuilderUtils.SetTextIfChanged(_selectedAssetText, _selectedDefinition.DisplayName);
+
+            UpdatePriceDisplay(); // handles price, daily change, buy interactable
+
             if (_riskLevelText != null)
             {
-                string riskStr = _selectedDef.RiskLevel.ToString();
-                _riskLevelText.text = $"Risk Level: {riskStr}";
-                _riskLevelText.color = _selectedDef.RiskLevel switch
+                UIBuilderUtils.SetTextIfChanged(_riskLevelText, $"Risk: {_selectedDefinition.RiskLevel}");
+                _riskLevelText.color = _selectedDefinition.RiskLevel switch
                 {
-                    RiskLevel.Low => _gainColor,
+                    RiskLevel.Low    => _gainColor,
                     RiskLevel.Medium => new Color(1f, 0.8f, 0.2f),
-                    RiskLevel.High => _lossColor,
-                    _ => Color.white
+                    RiskLevel.High   => _lossColor,
+                    _                => Color.white
                 };
             }
 
-            // Shares owned + position details
-            var activeInv = GetActiveInvestment(_selectedDef);
-            if (_sharesOwnedText != null)
-            {
-                int shares = activeInv != null ? activeInv.NumberOfShares : 0;
-                _sharesOwnedText.text = $"Shares Owned: {shares}";
-            }
+            var activeInv   = GetActiveInvestment(_selectedDefinition);
+            int sharesOwned = activeInv != null ? activeInv.NumberOfShares : 0;
 
-            // Show position details when player owns shares
-            if (activeInv != null && activeInv.NumberOfShares > 0)
-            {
-                if (_costBasisText != null)
-                {
-                    _costBasisText.gameObject.SetActive(true);
-                    _costBasisText.text = $"Cost Basis: ${activeInv.TotalCostBasis:N0} (${activeInv.AveragePurchasePrice:F2}/share)";
-                }
-                if (_marketValueText != null)
-                {
-                    _marketValueText.gameObject.SetActive(true);
-                    _marketValueText.text = $"Market Value: ${activeInv.CurrentValue:N0}";
-                }
-                if (_gainLossText != null)
-                {
-                    _gainLossText.gameObject.SetActive(true);
-                    float gain = activeInv.TotalGain;
-                    float pct = activeInv.PercentageReturn;
-                    string prefix = gain >= 0 ? "+" : "";
-                    _gainLossText.text = $"Gain/Loss: {prefix}${gain:N0} ({prefix}{pct:F1}%)";
-                    _gainLossText.color = gain >= 0 ? _gainColor : _lossColor;
-                }
-            }
-            else
-            {
-                HidePositionDetails();
-            }
+            UIBuilderUtils.SetTextIfChanged(_sharesOwnedText, $"Owned: {sharesOwned}");
+            UIBuilderUtils.SetTextIfChanged(_descriptionText, sharesOwned > 0
+                ? "Tap Sell to remove 1 share."
+                : "Tap Buy to purchase 1 share.");
+
+            if (_sellButton != null)
+                _sellButton.gameObject.SetActive(sharesOwned > 0);
         }
 
-        private void ClearSelectedAssetDisplay()
+        // ═══════════════════════════════════════════════════════════════
+        // TICK + BALANCE EVENT HANDLERS
+        // ═══════════════════════════════════════════════════════════════
+
+        private void HandleTick(int tickNumber)
         {
-            RestoreQuantityButtonColors();
+            if (!IsVisible) return;
 
-            if (_selectedAssetText != null)
-                _selectedAssetText.text = "Selected Asset: ---";
-            if (_priceText != null)
-                _priceText.text = "Price: $---";
-            if (_priceChangeText != null)
-            {
-                _priceChangeText.text = "Daily Change: ---%";
-                _priceChangeText.color = Color.white;
-            }
-            if (_riskLevelText != null)
-            {
-                _riskLevelText.text = "Risk Level: ---";
-                _riskLevelText.color = Color.white;
-            }
-            if (_sharesOwnedText != null)
-                _sharesOwnedText.text = "Shares Owned: ---";
+            // Snapshot unconditionally — Invest tab needs accurate snapshot when switching
+            SnapshotPrices();
 
-            HidePositionDetails();
+            if (_activeTabIndex == 0) RefreshOverviewPanel();
+            else                      UpdateDetailPriceTick();
         }
 
-        private void HidePositionDetails()
+        /// <summary>Lightweight per-tick update for Invest tab — price fields only.</summary>
+        private void UpdateDetailPriceTick()
         {
-            if (_costBasisText != null)
-                _costBasisText.gameObject.SetActive(false);
-            if (_marketValueText != null)
-                _marketValueText.gameObject.SetActive(false);
-            if (_gainLossText != null)
-                _gainLossText.gameObject.SetActive(false);
+            UpdatePriceDisplay();
+        }
+
+        private void HandleBalanceChanged(float newBalance, float delta)
+        {
+            if (!IsVisible) return;
+
+            if (_activeTabIndex == 0)
+                RefreshOverviewPanel();
+            else if (_buyButton != null && _selectedDefinition != null)
+                _buyButton.interactable = _currencyManager.CanAfford(_selectedDefinition.CurrentPrice);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -647,90 +479,28 @@ namespace FortuneValley.UI.Panels
         }
 
         /// <summary>
-        /// Calculate a weighted-average risk label for the portfolio.
-        /// </summary>
-        private string GetPortfolioRiskLabel()
-        {
-            if (_investmentSystem == null) return "None";
-
-            var holdings = _investmentSystem.ActiveInvestments;
-            if (holdings.Count == 0) return "None";
-
-            float totalValue = 0f;
-            float weightedRisk = 0f;
-
-            foreach (var inv in holdings)
-            {
-                float val = inv.CurrentValue;
-                float risk = inv.Definition.RiskLevel switch
-                {
-                    RiskLevel.Low => 0f,
-                    RiskLevel.Medium => 1f,
-                    RiskLevel.High => 2f,
-                    _ => 1f
-                };
-                totalValue += val;
-                weightedRisk += val * risk;
-            }
-
-            if (totalValue <= 0) return "None";
-
-            float avg = weightedRisk / totalValue;
-
-            if (avg < 0.5f) return "Low";
-            if (avg < 1.5f) return "Medium";
-            return "High";
-        }
-
-        /// <summary>
-        /// Store current prices so next tick can show 1-day change.
+        /// Store current prices so the next tick can show 1-day change.
         /// </summary>
         private void SnapshotPrices()
         {
             if (_investmentSystem == null) return;
-
             foreach (var def in _investmentSystem.AvailableInvestments)
-            {
                 _previousPrices[def] = def.CurrentPrice;
-            }
         }
 
         /// <summary>
-        /// Get percentage price change since previous tick (1-day change).
+        /// Percentage price change since previous snapshot (1-day change).
         /// </summary>
         private float GetPriceChangePercent(InvestmentDefinition def)
         {
             if (_previousPrices.TryGetValue(def, out float prev) && prev > 0)
-            {
                 return (def.CurrentPrice - prev) / prev * 100f;
-            }
+
             // Fallback: change from base price
             if (def.BasePricePerShare > 0)
                 return (def.CurrentPrice - def.BasePricePerShare) / def.BasePricePerShare * 100f;
+
             return 0f;
-        }
-
-        /// <summary>
-        /// Create a TMP text element as a child of the given parent,
-        /// matching the style of sibling info texts.
-        /// </summary>
-        private TextMeshProUGUI CreatePositionInfoText(string name, Transform parent)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize = 14;
-            tmp.color = Color.white;
-            tmp.alignment = TextAlignmentOptions.Left;
-            tmp.textWrappingMode = TextWrappingModes.NoWrap;
-
-            // Match layout of sibling text elements
-            var le = go.AddComponent<UnityEngine.UI.LayoutElement>();
-            le.preferredHeight = 20;
-            le.flexibleWidth = 1;
-
-            go.SetActive(false);
-            return tmp;
         }
 
         // ═══════════════════════════════════════════════════════════════
