@@ -14,6 +14,9 @@ namespace FortuneValley.Core
         [SerializeField] private RulesCarouselPanel _rulesCarousel;
         [SerializeField] private GameEndPanel _gameEndPanel;
 
+        [Header("Countdown")]
+        [SerializeField] private CountdownOverlay _countdownOverlay;
+
         [Header("HUD")]
         [SerializeField] private GameObject _topFrame;
         [SerializeField] private GameObject _bottomFrame;
@@ -80,14 +83,12 @@ namespace FortuneValley.Core
 
         private void HandleCarouselComplete()
         {
-            // Rules -> Gameplay
+            // Rules -> Gameplay (countdown plays first)
             if (_rulesCarousel != null)
                 _rulesCarousel.Hide();
 
             SetHUDVisible(true);
-
-            if (_gameManager != null)
-                _gameManager.StartGame();
+            StartCountdownThen(() => _gameManager?.StartGame());
         }
 
         private void HandleGameEnd(bool isPlayerWin, GameSummary summary)
@@ -104,20 +105,29 @@ namespace FortuneValley.Core
         }
 
         /// <summary>
-        /// Restart the game immediately, skipping the title screen and rules carousel.
+        /// Restart the game, skipping the title screen and rules carousel.
+        /// A 3-2-1-GO! countdown plays before the game resumes.
         /// Called by the "Play Again" button on the game end screen.
         /// </summary>
         public void RestartGame()
         {
-            // Deactivate the game end panel
+            // Deactivate the game end panel; HUD stays visible
             if (_gameEndPanel != null)
                 _gameEndPanel.gameObject.SetActive(false);
 
-            // HUD stays visible — it's already shown during game end
+            StartCountdownThen(() => _gameManager?.RestartGame());
+        }
 
-            // Fires OnGameStart so all systems (LotVisual, CityManager, etc.) reset
-            if (_gameManager != null)
-                _gameManager.RestartGame();
+        /// <summary>
+        /// Runs the countdown overlay then invokes onComplete.
+        /// Falls back to immediate invocation if the overlay is not wired up.
+        /// </summary>
+        private void StartCountdownThen(System.Action onComplete)
+        {
+            if (_countdownOverlay != null)
+                _countdownOverlay.StartCountdown(onComplete);
+            else
+                onComplete?.Invoke();
         }
 
         private void SetHUDVisible(bool visible)
