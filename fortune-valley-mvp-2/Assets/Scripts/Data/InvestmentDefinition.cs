@@ -254,5 +254,99 @@ namespace FortuneValley.Core
             _daysSinceStart = 0;
             _priceInitialized = true;
         }
+
+        /// <summary>
+        /// Simulate N days of price history using this definition's price model.
+        /// Operates on LOCAL copies only — does not affect _currentPrice, _trendDirection,
+        /// or _daysSinceStart. Returns array of length <paramref name="days"/>, oldest first.
+        ///
+        /// Uses System.Random (not UnityEngine.Random) to avoid corrupting global random state.
+        /// </summary>
+        public float[] SimulateHistory(int days, int seed)
+        {
+            var rng    = new System.Random(seed);
+            var result = new float[days];
+
+            // Local price state — never touches the ScriptableObject's runtime fields
+            float price    = _basePricePerShare;
+            float trend    = (float)(rng.NextDouble() * 2.0 - 1.0); // -1 to +1
+            int   dayCount = 0;
+
+            float dailyGrowthRate = Mathf.Pow(1f + _annualReturnRate, 1f / 365f) - 1f;
+
+            for (int i = 0; i < days; i++)
+            {
+                dayCount++;
+                float expectedPrice = _basePricePerShare * Mathf.Pow(1f + dailyGrowthRate, dayCount);
+
+                // Bonds/T-Bills: smooth compound curve, no noise
+                if (HasFixedReturn)
+                {
+                    price = expectedPrice;
+                }
+                else
+                {
+                    // Step 1: Maybe reverse trend direction
+                    float reversalChance = _riskLevel switch
+                    {
+                        RiskLevel.Low    => 0.20f,
+                        RiskLevel.Medium => 0.10f,
+                        RiskLevel.High   => 0.05f,
+                        _                => 0.10f
+                    };
+
+                    if (rng.NextDouble() < reversalChance)
+                        trend = -Mathf.Sign(trend) * (float)(0.5 + rng.NextDouble() * 0.5);
+
+                    // Step 2: Mean-reversion pull toward expected price
+                    float mrStrength = _riskLevel switch
+                    {
+                        RiskLevel.Low    => 0.05f,
+                        RiskLevel.Medium => 0.02f,
+                        RiskLevel.High   => 0.01f,
+                        _                => 0.02f
+                    };
+                    float meanReversion = price > 0
+                        ? (expectedPrice - price) / price * mrStrength
+                        : 0f;
+
+                    // Step 3: Trend contribution
+                    float trendStrength = _riskLevel switch
+                    {
+                        RiskLevel.Low    => 0.002f,
+                        RiskLevel.Medium => 0.006f,
+                        RiskLevel.High   => 0.012f,
+                        _                => 0.006f
+                    };
+                    float trendContrib = trend * trendStrength;
+
+                    // Step 4: Small random noise (±0.1%)
+                    float noise = (float)(rng.NextDouble() * 0.002 - 0.001);
+
+                    // Step 5: Combine factors
+                    float dailyChange = dailyGrowthRate + meanReversion + trendContrib + noise;
+                    price *= (1f + dailyChange);
+
+                    // Step 6: Clamp deviation from expected price
+                    float maxDeviation = _riskLevel switch
+                    {
+                        RiskLevel.Low    => 0.30f,
+                        RiskLevel.Medium => 0.80f,
+                        RiskLevel.High   => 1.50f,
+                        _                => 0.80f
+                    };
+                    float lowerBound = expectedPrice * (1f - maxDeviation);
+                    float upperBound = expectedPrice * (1f + maxDeviation);
+                    price = Mathf.Clamp(price, lowerBound, upperBound);
+
+                    // Absolute floor: 20% of base price (never crash to near-zero)
+                    price = Mathf.Max(price, _basePricePerShare * 0.2f);
+                }
+
+                result[i] = price;
+            }
+
+            return result;
+        }
     }
 }

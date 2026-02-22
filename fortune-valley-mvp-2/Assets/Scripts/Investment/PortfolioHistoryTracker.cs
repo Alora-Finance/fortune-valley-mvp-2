@@ -15,10 +15,11 @@ namespace FortuneValley.Core
 
         [Header("Settings")]
         [Tooltip("How many ticks between each data snapshot")]
-        [SerializeField] private int _snapshotInterval = 5;
+        [SerializeField] private int _snapshotInterval = 1;
 
         [Tooltip("Maximum data points stored (oldest removed when exceeded)")]
-        [SerializeField] private int _maxDataPoints = 500;
+        [SerializeField] private int _maxDataPoints = 200;
+        // TECH DEBT: RemoveAt(0) is O(n). Use Queue<float> if maxDataPoints grows >500.
 
         // History data
         private List<float> _totalWealthHistory = new List<float>();

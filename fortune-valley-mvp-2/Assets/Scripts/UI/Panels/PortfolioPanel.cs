@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using FortuneValley.Core;
+using FortuneValley.UI.Components;
 
 namespace FortuneValley.UI.Panels
 {
@@ -24,6 +25,8 @@ namespace FortuneValley.UI.Panels
         [Header("Dependencies")]
         [SerializeField] private InvestmentSystem _investmentSystem;
         [SerializeField] private CurrencyManager _currencyManager;
+        [SerializeField] private PortfolioHistoryTracker _historyTracker;
+        [SerializeField] private StockPriceHistoryStore _stockHistory;
 
         [Header("Colors")]
         [SerializeField] private Color _gainColor = new Color(0.2f, 0.8f, 0.2f);
@@ -73,8 +76,13 @@ namespace FortuneValley.UI.Panels
         // RUNTIME STATE
         // ═══════════════════════════════════════════════════════════════
 
+        // Graph components (created at runtime inside the placeholder Image GOs)
+        private LineGraphGraphic _overviewGraph;
+        private LineGraphGraphic _stockGraph;
+
         private bool _initialized;
         private int _activeTabIndex; // 0 = Overview, 1 = Invest
+        private int _currentDayTick;
         private InvestmentDefinition _selectedDefinition;
 
         // Track previous prices per tick for daily change display
@@ -115,6 +123,10 @@ namespace FortuneValley.UI.Panels
                 _investmentSystem = FindFirstObjectByType<InvestmentSystem>();
             if (_currencyManager == null)
                 _currencyManager = FindFirstObjectByType<CurrencyManager>();
+            if (_historyTracker == null)
+                _historyTracker = FindFirstObjectByType<PortfolioHistoryTracker>();
+            if (_stockHistory == null)
+                _stockHistory = FindFirstObjectByType<StockPriceHistoryStore>();
         }
 
         private void OnEnable()
@@ -189,6 +201,43 @@ namespace FortuneValley.UI.Panels
             // Action buttons
             _buyButton  = FindButton($"{bsp}/Buy or Sell/ButtonGrid/BuyButton");
             _sellButton = FindButton($"{bsp}/Buy or Sell/ButtonGrid/SellButton");
+
+            // Graphs — created as children of the existing placeholder Image GOs
+            _overviewGraph = CreateGraphInPlaceholder("OverviewPanel/PortfolioPerformance/Image");
+            _stockGraph    = CreateGraphInPlaceholder("InvestPanel/InvestmentInfoPanel/BuySellPanel/Image");
+        }
+
+        /// <summary>
+        /// Finds the placeholder Image at <paramref name="imagePath"/> relative to this transform,
+        /// creates a "Graph" child with LineGraphGraphic, and returns the component.
+        /// Returns null (with a warning) if the path is not found.
+        /// </summary>
+        private LineGraphGraphic CreateGraphInPlaceholder(string imagePath)
+        {
+            Transform placeholder = transform.Find(imagePath);
+            if (placeholder == null)
+            {
+                UnityEngine.Debug.LogWarning($"[PortfolioPanel] Graph placeholder not found at: {imagePath}");
+                return null;
+            }
+
+            // Disable the solid background color so the graph draws cleanly
+            var img = placeholder.GetComponent<Image>();
+            if (img != null) img.color = new Color(0f, 0f, 0f, 0.3f);
+
+            // CanvasRenderer must be added explicitly at runtime — [RequireComponent] only
+            // auto-adds in the Editor. Without it, GraphicRaycaster throws
+            // MissingComponentException and breaks ALL button clicks in the canvas.
+            var go = new GameObject("Graph", typeof(RectTransform), typeof(CanvasRenderer));
+            go.transform.SetParent(placeholder, false);
+
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            return go.AddComponent<LineGraphGraphic>();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -340,6 +389,7 @@ namespace FortuneValley.UI.Panels
         {
             _selectedDefinition = def;
             RefreshDetailPanel();
+            RefreshStockGraph();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -367,6 +417,39 @@ namespace FortuneValley.UI.Panels
                 $"Risk: {PortfolioPanelLogic.GetPortfolioRiskLabel(holdings)}");
             UIBuilderUtils.SetTextIfChanged(_currentHoldingsText,
                 PortfolioPanelLogic.BuildHoldingsSummary(holdings));
+
+            // Update portfolio value graph on Overview tab
+            if (_historyTracker != null && _overviewGraph != null)
+            {
+                var window   = GetLastN(_historyTracker.TotalWealthHistory, 30);
+                int startDay = _currentDayTick - (window.Count - 1); // may be negative early on
+                _overviewGraph.SetData(window, startDay);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // STOCK GRAPH
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>Update the per-stock price history graph on the Invest tab.</summary>
+        private void RefreshStockGraph()
+        {
+            if (_selectedDefinition == null || _stockHistory == null || _stockGraph == null) return;
+
+            var window   = _stockHistory.GetWindow(_selectedDefinition, 30);
+            int startDay = _currentDayTick - (window.Count - 1); // negative for pre-game days
+            _stockGraph.SetData(window, startDay);
+        }
+
+        /// <summary>Returns a new list of the last min(n, source.Count) entries.</summary>
+        private static IReadOnlyList<float> GetLastN(IReadOnlyList<float> source, int n)
+        {
+            if (source == null || source.Count == 0) return new List<float>();
+            int start = System.Math.Max(0, source.Count - n);
+            var result = new List<float>(source.Count - start);
+            for (int i = start; i < source.Count; i++)
+                result.Add(source[i]);
+            return result;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -444,11 +527,22 @@ namespace FortuneValley.UI.Panels
         {
             if (!IsVisible) return;
 
+            _currentDayTick = tickNumber;
+
             // Snapshot unconditionally — Invest tab needs accurate snapshot when switching
             SnapshotPrices();
 
-            if (_activeTabIndex == 0) RefreshOverviewPanel();
-            else                      UpdateDetailPriceTick();
+            if (_activeTabIndex == 0)
+            {
+                RefreshOverviewPanel(); // also updates _overviewGraph
+            }
+            else
+            {
+                UpdateDetailPriceTick();
+                // Update stock graph while player is on Invest tab with a selection
+                if (_selectedDefinition != null)
+                    RefreshStockGraph();
+            }
         }
 
         /// <summary>Lightweight per-tick update for Invest tab — price fields only.</summary>
