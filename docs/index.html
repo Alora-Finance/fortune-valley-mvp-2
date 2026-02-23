@@ -11,19 +11,18 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-0: #060D09;
-      --bg-1: #0C1710;
-      --bg-2: #111E16;
-      --bg-3: #162419;
-      --accent: #3DDB6E;
-      --accent-dark: #2D8C4E;
-      --accent-glow: rgba(61,219,110,0.12);
-      --accent-glow-strong: rgba(61,219,110,0.28);
-      --text-0: #EDE8DF;
-      --text-1: #A3B5A8;
-      --text-2: #637568;
-      --border: rgba(61,219,110,0.09);
-      --border-strong: rgba(61,219,110,0.22);
+      --bg-0: #ffffff;
+      --bg-1: #f4f7f5;
+      --bg-2: #edf2ee;
+      --accent: #2D8C4E;
+      --accent-dark: #246b3d;
+      --accent-glow: rgba(45,140,78,0.08);
+      --accent-glow-strong: rgba(45,140,78,0.18);
+      --text-0: #0f1c14;
+      --text-1: #4a6254;
+      --text-2: #7a9988;
+      --border: rgba(45,140,78,0.1);
+      --border-strong: rgba(45,140,78,0.22);
     }
 
     html { scroll-behavior: smooth; }
@@ -36,18 +35,17 @@
       overflow-x: hidden;
     }
 
-    /* Dot grid background */
+    /* Subtle dot grid */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background-image: radial-gradient(circle, rgba(61,219,110,0.055) 1px, transparent 1px);
+      background-image: radial-gradient(circle, rgba(45,140,78,0.07) 1px, transparent 1px);
       background-size: 32px 32px;
       pointer-events: none;
       z-index: 0;
     }
 
-    /* Ensure all direct children stack above the dot grid */
     body > * { position: relative; z-index: 1; }
 
     .container { max-width: 940px; margin: 0 auto; padding: 0 28px; }
@@ -65,7 +63,7 @@
       padding: 18px 36px;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      background: rgba(6,13,9,0.8);
+      background: rgba(255,255,255,0.88);
       border-bottom: 1px solid var(--border);
     }
 
@@ -87,7 +85,7 @@
 
     .nav-cta {
       background: var(--accent);
-      color: #060D09;
+      color: #fff;
       font-family: 'Outfit', sans-serif;
       font-size: 0.82rem;
       font-weight: 700;
@@ -98,7 +96,7 @@
       text-decoration: none;
       transition: background 0.2s, transform 0.15s;
     }
-    .nav-cta:hover { background: #5AEA86; transform: translateY(-1px); }
+    .nav-cta:hover { background: var(--accent-dark); transform: translateY(-1px); }
 
     /* ================================================================
        HERO
@@ -114,7 +112,6 @@
       overflow: hidden;
     }
 
-    /* Large ambient glow orb */
     .hero-orb {
       position: absolute;
       top: -280px;
@@ -122,7 +119,7 @@
       transform: translateX(-50%);
       width: 900px;
       height: 900px;
-      background: radial-gradient(circle, rgba(61,219,110,0.13) 0%, transparent 62%);
+      background: radial-gradient(circle, rgba(45,140,78,0.07) 0%, transparent 62%);
       pointer-events: none;
     }
 
@@ -162,37 +159,27 @@
       font-size: 1.15rem;
       color: var(--text-1);
       max-width: 540px;
-      margin: 0 auto 14px;
+      margin: 0 auto 44px;
       font-weight: 400;
       animation: fadeUp 0.85s 0.16s ease both;
-    }
-
-    .hero .quote {
-      font-family: 'DM Serif Display', serif;
-      font-style: italic;
-      font-size: 0.95rem;
-      color: var(--text-2);
-      margin-bottom: 44px;
-      animation: fadeUp 0.85s 0.22s ease both;
     }
 
     .hero-img-wrap {
       position: relative;
       display: inline-block;
       margin-bottom: 44px;
-      animation: fadeUp 0.9s 0.3s ease both;
+      animation: fadeUp 0.9s 0.24s ease both;
     }
 
-    /* Green glow beneath the hero image */
     .hero-img-wrap::after {
       content: '';
       position: absolute;
-      bottom: -32px;
+      bottom: -28px;
       left: 8%;
       right: 8%;
-      height: 80px;
-      background: radial-gradient(ellipse, rgba(61,219,110,0.38) 0%, transparent 70%);
-      filter: blur(22px);
+      height: 70px;
+      background: radial-gradient(ellipse, rgba(45,140,78,0.22) 0%, transparent 70%);
+      filter: blur(20px);
       z-index: -1;
     }
 
@@ -201,13 +188,13 @@
       max-width: 740px;
       border-radius: 14px;
       border: 1px solid var(--border-strong);
-      box-shadow: 0 28px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(61,219,110,0.06);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
       display: block;
       animation: float 7s ease-in-out infinite;
     }
 
     .hero-cta {
-      animation: fadeUp 0.85s 0.42s ease both;
+      animation: fadeUp 0.85s 0.36s ease both;
     }
 
     /* ================================================================
@@ -218,7 +205,7 @@
       align-items: center;
       gap: 10px;
       background: var(--accent);
-      color: #060D09;
+      color: #fff;
       font-size: 1rem;
       font-weight: 700;
       padding: 16px 48px;
@@ -232,9 +219,9 @@
       transition: transform 0.2s;
     }
     .btn-primary:hover {
-      background: #5AEA86;
+      background: var(--accent-dark);
       transform: translateY(-3px);
-      box-shadow: 0 14px 44px rgba(61,219,110,0.3);
+      box-shadow: 0 12px 36px rgba(45,140,78,0.25);
     }
     .btn-primary:hover::after { transform: translateX(5px); }
 
@@ -275,7 +262,6 @@
 
     .section-header { margin-bottom: 60px; position: relative; }
 
-    /* Large faded decorative number */
     .section-num {
       position: absolute;
       top: -28px;
@@ -283,7 +269,7 @@
       font-family: 'DM Serif Display', serif;
       font-size: 9rem;
       line-height: 1;
-      color: rgba(61,219,110,0.04);
+      color: rgba(45,140,78,0.05);
       pointer-events: none;
       user-select: none;
       letter-spacing: -0.04em;
@@ -325,16 +311,15 @@
     }
 
     .thesis-card {
-      background: var(--bg-1);
+      background: var(--bg-0);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 28px 26px;
       position: relative;
       overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     }
 
-    /* Accent top bar */
     .thesis-card::before {
       content: '';
       position: absolute;
@@ -346,6 +331,7 @@
     .thesis-card:hover {
       border-color: var(--border-strong);
       transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(45,140,78,0.1);
     }
 
     .thesis-card h3 {
@@ -363,7 +349,7 @@
     }
 
     /* ================================================================
-       FEATURES (How It Works)
+       FEATURES
     ================================================================ */
     .feature {
       display: grid;
@@ -379,11 +365,11 @@
     .feature-img-wrap::after {
       content: '';
       position: absolute;
-      bottom: -18px;
+      bottom: -16px;
       left: 6%; right: 6%;
-      height: 60px;
-      background: radial-gradient(ellipse, rgba(61,219,110,0.22) 0%, transparent 70%);
-      filter: blur(14px);
+      height: 50px;
+      background: radial-gradient(ellipse, rgba(45,140,78,0.14) 0%, transparent 70%);
+      filter: blur(12px);
       z-index: -1;
     }
 
@@ -391,7 +377,7 @@
       width: 100%;
       border-radius: 12px;
       border: 1px solid var(--border-strong);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.1);
       display: block;
     }
 
@@ -460,7 +446,7 @@
        CTA BAND
     ================================================================ */
     .cta-band {
-      background: linear-gradient(140deg, #091910 0%, #0C2016 45%, #071209 100%);
+      background: linear-gradient(140deg, #eaf4ee 0%, #f0f7f2 45%, #e6f2eb 100%);
       border-top: 1px solid var(--border-strong);
       border-bottom: 1px solid var(--border-strong);
       text-align: center;
@@ -469,16 +455,15 @@
       overflow: hidden;
     }
 
-    /* Subtle glow inside CTA */
     .cta-band::before {
       content: '';
       position: absolute;
-      top: -60%;
+      top: -40%;
       left: 50%;
       transform: translateX(-50%);
       width: 700px;
       height: 500px;
-      background: radial-gradient(ellipse, rgba(61,219,110,0.1) 0%, transparent 65%);
+      background: radial-gradient(ellipse, rgba(45,140,78,0.08) 0%, transparent 65%);
       pointer-events: none;
     }
 
@@ -524,7 +509,7 @@
       line-height: 1.75;
     }
 
-    /* URL copy box -- dark theme */
+    /* URL copy box */
     .url-copy-box {
       display: flex;
       align-items: center;
@@ -548,7 +533,7 @@
 
     .copy-btn {
       background: var(--accent);
-      color: #060D09;
+      color: #fff;
       border: none;
       border-radius: 6px;
       padding: 7px 16px;
@@ -562,8 +547,8 @@
       transition: background 0.15s;
       flex-shrink: 0;
     }
-    .copy-btn:hover { background: #5AEA86; }
-    .copy-btn.copied { background: var(--text-2); color: var(--text-0); }
+    .copy-btn:hover { background: var(--accent-dark); }
+    .copy-btn.copied { background: var(--text-2); color: #fff; }
 
     /* ================================================================
        FOOTER
@@ -589,7 +574,6 @@
       50%       { transform: translateY(-10px); }
     }
 
-    /* Scroll-reveal classes */
     .reveal {
       opacity: 0;
       transform: translateY(34px);
@@ -632,9 +616,8 @@
       <div class="hero-eyebrow">Interactive Financial Education</div>
       <h1>Fortune<em>Valley</em></h1>
       <p class="subtitle">A game that teaches high school students personal finance by making them use it to win.</p>
-      <p class="quote">"The best way to learn compound interest is to need it to win."</p>
       <div class="hero-img-wrap">
-        <img src="images/hero-title.jpg" alt="Fortune Valley title screen" class="hero-img">
+        <img src="images/hero-title.png" alt="Fortune Valley title screen" class="hero-img">
       </div>
       <div class="hero-cta">
         <a href="play.html" class="btn-primary">Play Now</a>
@@ -688,7 +671,7 @@
 
       <div class="feature reveal">
         <div class="feature-img-wrap">
-          <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
+          <img src="images/gameplay-hud.png" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
         </div>
         <div class="feature-text">
           <h3>Manage Your Money in Real Time</h3>
@@ -698,7 +681,7 @@
 
       <div class="feature reveal">
         <div class="feature-img-wrap">
-          <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view" class="feature-img">
+          <img src="images/city-overview.png" alt="Fortune Valley isometric city view" class="feature-img">
         </div>
         <div class="feature-text">
           <h3>Build Your City, Beat Your Rival</h3>
