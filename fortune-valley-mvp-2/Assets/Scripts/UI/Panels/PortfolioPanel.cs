@@ -28,6 +28,9 @@ namespace FortuneValley.UI.Panels
         [SerializeField] private PortfolioHistoryTracker _historyTracker;
         [SerializeField] private StockPriceHistoryStore _stockHistory;
 
+        [Header("Font")]
+        [SerializeField] private TMP_FontAsset _labelFont; // assign Rubik-Medium SDF in Inspector
+
         [Header("Colors")]
         [SerializeField] private Color _gainColor = new Color(0.2f, 0.8f, 0.2f);
         [SerializeField] private Color _lossColor = new Color(0.8f, 0.2f, 0.2f);
@@ -221,9 +224,9 @@ namespace FortuneValley.UI.Panels
                 return null;
             }
 
-            // Disable the solid background color so the graph draws cleanly
+            // Clear the placeholder background so the graph draws on the card's white surface
             var img = placeholder.GetComponent<Image>();
-            if (img != null) img.color = new Color(0f, 0f, 0f, 0.3f);
+            if (img != null) img.color = Color.clear;
 
             // CanvasRenderer must be added explicitly at runtime — [RequireComponent] only
             // auto-adds in the Editor. Without it, GraphicRaycaster throws
@@ -234,10 +237,13 @@ namespace FortuneValley.UI.Panels
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
+            // Inset from the placeholder edges so Y-label (left) and X-label (bottom) aren't clipped
+            rt.offsetMin = new Vector2(LineGraphGraphic.YLabelWidth - 8f, LineGraphGraphic.XLabelHeight + 2f);
             rt.offsetMax = Vector2.zero;
 
-            return go.AddComponent<LineGraphGraphic>();
+            var graph = go.AddComponent<LineGraphGraphic>();
+            graph.SetLabelFont(_labelFont);
+            return graph;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -402,7 +408,9 @@ namespace FortuneValley.UI.Panels
 
             float balance      = _currencyManager.Balance;
             float portfolioVal = _investmentSystem.TotalPortfolioValue;
-            float totalGain    = _investmentSystem.TotalGain;
+            // LifetimeTotalGain = realized gains from all sales + current unrealized gain on open positions.
+            // This never drops after a profitable sale, matching the "cumulative investment gain" intent.
+            float totalGain    = _investmentSystem.LifetimeTotalGain;
             var   holdings     = _investmentSystem.ActiveInvestments;
 
             UIBuilderUtils.SetTextIfChanged(_balanceText,          $"Balance: ${balance:N0}");
@@ -418,12 +426,14 @@ namespace FortuneValley.UI.Panels
             UIBuilderUtils.SetTextIfChanged(_currentHoldingsText,
                 PortfolioPanelLogic.BuildHoldingsSummary(holdings));
 
-            // Update portfolio value graph on Overview tab
+            // Update portfolio value graph on Overview tab — two lines so students can see
+            // total wealth (red) and net investment gain (yellow) separately (opportunity cost signal)
             if (_historyTracker != null && _overviewGraph != null)
             {
-                var window   = GetLastN(_historyTracker.TotalWealthHistory, 30);
-                int startDay = _currentDayTick - (window.Count - 1); // may be negative early on
-                _overviewGraph.SetData(window, startDay);
+                var window     = GetLastN(_historyTracker.TotalWealthHistory, 30);
+                var gainWindow = GetLastN(_historyTracker.NetGainHistory, 30);
+                int startDay   = _currentDayTick - (window.Count - 1); // may be negative early on
+                _overviewGraph.SetData(window, gainWindow, startDay);
             }
         }
 
