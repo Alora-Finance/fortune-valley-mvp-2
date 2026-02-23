@@ -587,6 +587,129 @@
     .reveal-delay-4 { transition-delay: 0.4s; }
 
     /* ================================================================
+       LEARNING TARGETS
+    ================================================================ */
+    .targets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .target-card {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
+
+    .target-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 70%);
+    }
+
+    .target-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(45,140,78,0.1);
+    }
+
+    .target-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .target-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .target-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--text-0);
+      line-height: 1.25;
+    }
+
+    .target-mechanic {
+      font-size: 0.88rem;
+      color: var(--text-1);
+      line-height: 1.75;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .target-outcome-label {
+      display: block;
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .target-outcome {
+      font-size: 0.88rem;
+      color: var(--text-0);
+      line-height: 1.75;
+      font-weight: 500;
+    }
+
+    /* Stretch target */
+    .stretch-card {
+      background: #fdf9f1;
+      border: 1px solid rgba(176,125,32,0.22);
+      border-radius: 12px;
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .stretch-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #B07D20 0%, transparent 70%);
+    }
+
+    .stretch-card .target-badge {
+      color: #8a6010;
+      background: rgba(176,125,32,0.08);
+      border-color: rgba(176,125,32,0.28);
+    }
+
+    .stretch-card .target-mechanic {
+      border-bottom-color: rgba(176,125,32,0.15);
+    }
+
+    .stretch-card .target-outcome-label { color: #8a6010; }
+
+    /* ================================================================
        RESPONSIVE
     ================================================================ */
     @media (max-width: 720px) {
@@ -595,6 +718,7 @@
       .hero { padding: 100px 20px 60px; }
       .hero h1 { font-size: clamp(3rem, 14vw, 4.5rem); }
       .thesis-grid { grid-template-columns: 1fr; }
+      .targets-grid { grid-template-columns: 1fr; }
       .feature { grid-template-columns: 1fr; gap: 28px; }
       .section-num { font-size: 5.5rem; }
       .prompts-list li { grid-template-columns: 36px 1fr; gap: 14px; }
@@ -691,11 +815,114 @@
     </div>
   </section>
 
+  <!-- Learning Targets -->
+  <section>
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-num">03</span>
+        <span class="section-label">What Students Learn</span>
+        <h2>Learning Targets</h2>
+        <p class="section-lead">
+          Each target is surfaced through a specific game mechanic. Students encounter the concept by playing, then articulate it in their own words afterward.
+        </p>
+      </div>
+
+      <div class="targets-grid">
+
+        <div class="target-card reveal reveal-delay-1">
+          <div class="target-header">
+            <span class="target-badge">Target 1</span>
+            <h3>Opportunity Cost</h3>
+          </div>
+          <p class="target-mechanic">Every dollar can only be used once. Spending $800 on a lot means not investing it. The rival's 30-day countdown makes this choice visible and urgent.</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Identify a specific moment where spending on one thing prevented them from doing something else, and explain whether that trade-off helped or hurt.</p>
+          </div>
+        </div>
+
+        <div class="target-card reveal reveal-delay-2">
+          <div class="target-header">
+            <span class="target-badge">Target 2</span>
+            <h3>Risk vs. Reward</h3>
+          </div>
+          <p class="target-mechanic">The 8 stocks split into two tiers. High-risk stocks (Tech Corp at 15%, ChipMaker at 22% annual) swing much more than low-risk stocks (PowerGrid, RefreshCo, HealthGroup at 5-6% annual).</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Explain why a higher-return investment is also riskier, and describe a game moment where they chose one or the other and what happened.</p>
+          </div>
+        </div>
+
+        <div class="target-card reveal reveal-delay-3">
+          <div class="target-header">
+            <span class="target-badge">Target 3</span>
+            <h3>Time Value of Money</h3>
+          </div>
+          <p class="target-mechanic">The lot purchase popup shows payback period explicitly (e.g., Bistro costs $3,500, earns $12/day, payback = 292 days).</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Look at a lot's payback time and decide whether buying it makes sense given how many days are left, and explain why earlier investment produces more total return than later investment.</p>
+          </div>
+        </div>
+
+        <div class="target-card reveal reveal-delay-4">
+          <div class="target-header">
+            <span class="target-badge">Target 4</span>
+            <h3>Compound Growth</h3>
+          </div>
+          <p class="target-mechanic">Investment prices update every game day along an expected growth curve. Gains accumulate on top of previous gains. The portfolio graph shows this curving upward over time.</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Describe why their investment grew faster toward the end of a holding period than at the start, and connect that to why pulling money out early costs more than just today's gains.</p>
+          </div>
+        </div>
+
+        <div class="target-card reveal reveal-delay-1">
+          <div class="target-header">
+            <span class="target-badge">Target 5</span>
+            <h3>Delayed Gratification vs. Immediate Action</h3>
+          </div>
+          <p class="target-mechanic">The rival creates real deadlines. Waiting to invest longer gets more return, but the rival buys lots on a countdown.</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Reflect on a specific moment where waiting (to stay invested) or acting immediately (to block the rival or buy a lot) was the right call, and explain the reasoning.</p>
+          </div>
+        </div>
+
+        <div class="target-card reveal reveal-delay-2">
+          <div class="target-header">
+            <span class="target-badge">Target 6</span>
+            <h3>Diversification as Risk Management</h3>
+          </div>
+          <p class="target-mechanic">Players can hold multiple stocks simultaneously. The portfolio panel shows a risk level label based on the mix. Students who go all-in on high-risk stocks face bigger swings than those who mix high and low risk.</p>
+          <div>
+            <span class="target-outcome-label">Student Outcome</span>
+            <p class="target-outcome">Explain why spreading money across both types reduces the chance of a catastrophic loss, using a moment from their game.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="stretch-card reveal">
+        <div class="target-header">
+          <span class="target-badge">Stretch</span>
+          <h3>Return on Investment Reasoning</h3>
+        </div>
+        <p class="target-mechanic">The lot popup shows cost and income side by side. Students can compare: buying the Bistro ($3,500, +$12/day, 292-day payback) vs. keeping $3,500 invested in a high-risk stock (22% annual = ~$770/year or ~$2.11/day).</p>
+        <div>
+          <span class="target-outcome-label">Student Outcome</span>
+          <p class="target-outcome">Use those numbers to argue which is the better use of money given their current game state, and recognize that the "better" answer changes depending on how many days remain and what the rival is doing.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- For Teachers -->
   <section class="for-teachers-bg">
     <div class="container">
       <div class="section-header reveal">
-        <span class="section-num">03</span>
+        <span class="section-num">04</span>
         <span class="section-label">Classroom Integration</span>
         <h2>For Teachers</h2>
         <p class="section-lead">
