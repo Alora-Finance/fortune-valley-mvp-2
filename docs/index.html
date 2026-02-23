@@ -4,302 +4,671 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fortune Valley: Learn Personal Finance Through Play</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg-0: #060D09;
+      --bg-1: #0C1710;
+      --bg-2: #111E16;
+      --bg-3: #162419;
+      --accent: #3DDB6E;
+      --accent-dark: #2D8C4E;
+      --accent-glow: rgba(61,219,110,0.12);
+      --accent-glow-strong: rgba(61,219,110,0.28);
+      --text-0: #EDE8DF;
+      --text-1: #A3B5A8;
+      --text-2: #637568;
+      --border: rgba(61,219,110,0.09);
+      --border-strong: rgba(61,219,110,0.22);
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #1a1a1a;
-      background: #fff;
+      font-family: 'Outfit', sans-serif;
+      color: var(--text-0);
+      background: var(--bg-0);
       line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-
-    /* Hero */
-    .hero {
-      background: #2D8C4E;
-      color: #fff;
-      text-align: center;
-      padding: 64px 24px 48px;
-    }
-    .hero h1 {
-      font-size: 3rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-    }
-    .hero .subtitle {
-      font-size: 1.25rem;
-      opacity: 0.9;
-      margin-bottom: 12px;
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .hero .thesis-anchor {
-      font-size: 1rem;
-      opacity: 0.8;
-      font-style: italic;
-      margin-bottom: 32px;
-      max-width: 480px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .hero-img {
-      width: 100%;
-      max-width: 700px;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      margin-bottom: 32px;
-    }
-    .btn {
-      display: inline-block;
-      background: #fff;
-      color: #2D8C4E;
-      font-size: 1.125rem;
-      font-weight: 700;
-      padding: 14px 40px;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    }
-    .btn-green {
-      background: #2D8C4E;
-      color: #fff;
+    /* Dot grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(61,219,110,0.055) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    /* Sections */
-    section { padding: 64px 0; }
-    section:nth-child(even) { background: #f7faf8; }
+    /* Ensure all direct children stack above the dot grid */
+    body > * { position: relative; z-index: 1; }
 
-    h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 24px;
-      color: #1a1a1a;
-    }
+    .container { max-width: 940px; margin: 0 auto; padding: 0 28px; }
 
-    .section-lead {
-      font-size: 1.1rem;
-      color: #444;
-      margin-bottom: 32px;
-      max-width: 700px;
-    }
-
-    /* Thesis */
-    .thesis-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-top: 16px;
-    }
-    .thesis-card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      padding: 24px;
-    }
-    .thesis-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #2D8C4E;
-      margin-bottom: 8px;
-    }
-    .thesis-card p {
-      font-size: 0.95rem;
-      color: #555;
-    }
-
-    /* How It Works */
-    .feature {
+    /* ================================================================
+       NAV
+    ================================================================ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
       display: flex;
-      gap: 32px;
       align-items: center;
-      margin-bottom: 40px;
-    }
-    .feature:last-child { margin-bottom: 0; }
-    .feature-img {
-      width: 420px;
-      min-width: 280px;
-      border-radius: 10px;
-      border: 1px solid #e0e0e0;
-    }
-    .feature-text h3 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .feature-text p {
-      color: #555;
-      font-size: 0.95rem;
+      justify-content: space-between;
+      padding: 18px 36px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(6,13,9,0.8);
+      border-bottom: 1px solid var(--border);
     }
 
-    /* For Teachers */
-    .for-teachers {
-      background: #fff;
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.15rem;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.02em;
     }
-    .prompts-list {
-      list-style: none;
-      counter-reset: prompt-counter;
-      margin-top: 8px;
+    .nav-logo span {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--text-2);
+      margin-left: 10px;
+      letter-spacing: 0.01em;
     }
-    .prompts-list li {
-      counter-increment: prompt-counter;
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      padding: 16px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 0.95rem;
-      color: #444;
+
+    .nav-cta {
+      background: var(--accent);
+      color: #060D09;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 9px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
     }
-    .prompts-list li:last-child { border-bottom: none; }
-    .prompts-list li::before {
-      content: counter(prompt-counter);
+    .nav-cta:hover { background: #5AEA86; transform: translateY(-1px); }
+
+    /* ================================================================
+       HERO
+    ================================================================ */
+    .hero {
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 28px;
-      height: 28px;
-      background: #2D8C4E;
-      color: #fff;
-      border-radius: 50%;
-      font-size: 0.8rem;
+      padding: 130px 28px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Large ambient glow orb */
+    .hero-orb {
+      position: absolute;
+      top: -280px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 900px;
+      background: radial-gradient(circle, rgba(61,219,110,0.13) 0%, transparent 62%);
+      pointer-events: none;
+    }
+
+    .hero-content { width: 100%; max-width: 800px; }
+
+    .hero-eyebrow {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+      border-radius: 100px;
+      padding: 6px 18px;
+      margin-bottom: 30px;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(4rem, 10vw, 7.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      color: var(--text-0);
+      margin-bottom: 20px;
+      animation: fadeUp 0.85s 0.08s ease both;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+      display: block;
+    }
+
+    .hero .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-1);
+      max-width: 540px;
+      margin: 0 auto 14px;
+      font-weight: 400;
+      animation: fadeUp 0.85s 0.16s ease both;
+    }
+
+    .hero .quote {
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--text-2);
+      margin-bottom: 44px;
+      animation: fadeUp 0.85s 0.22s ease both;
+    }
+
+    .hero-img-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 44px;
+      animation: fadeUp 0.9s 0.3s ease both;
+    }
+
+    /* Green glow beneath the hero image */
+    .hero-img-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: -32px;
+      left: 8%;
+      right: 8%;
+      height: 80px;
+      background: radial-gradient(ellipse, rgba(61,219,110,0.38) 0%, transparent 70%);
+      filter: blur(22px);
+      z-index: -1;
+    }
+
+    .hero-img {
+      width: 100%;
+      max-width: 740px;
+      border-radius: 14px;
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 28px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(61,219,110,0.06);
+      display: block;
+      animation: float 7s ease-in-out infinite;
+    }
+
+    .hero-cta {
+      animation: fadeUp 0.85s 0.42s ease both;
+    }
+
+    /* ================================================================
+       BUTTONS
+    ================================================================ */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #060D09;
+      font-size: 1rem;
       font-weight: 700;
+      padding: 16px 48px;
+      border-radius: 8px;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary::after {
+      content: '→';
+      transition: transform 0.2s;
+    }
+    .btn-primary:hover {
+      background: #5AEA86;
+      transform: translateY(-3px);
+      box-shadow: 0 14px 44px rgba(61,219,110,0.3);
+    }
+    .btn-primary:hover::after { transform: translateX(5px); }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 15px 36px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid var(--border-strong);
+      letter-spacing: 0.02em;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .btn-outline:hover {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* ================================================================
+       SECTIONS
+    ================================================================ */
+    section { padding: 100px 0; position: relative; }
+
+    section + section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 28px; right: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+    }
+
+    .section-header { margin-bottom: 60px; position: relative; }
+
+    /* Large faded decorative number */
+    .section-num {
+      position: absolute;
+      top: -28px;
+      left: -8px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 9rem;
+      line-height: 1;
+      color: rgba(61,219,110,0.04);
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: -0.04em;
+    }
+
+    .section-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.1rem, 5vw, 3.2rem);
+      font-weight: 400;
+      color: var(--text-0);
+      line-height: 1.15;
+      margin-bottom: 22px;
+    }
+
+    .section-lead {
+      font-size: 1.05rem;
+      color: var(--text-1);
+      max-width: 700px;
+      line-height: 1.8;
+    }
+
+    /* ================================================================
+       THESIS CARDS
+    ================================================================ */
+    .thesis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .thesis-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 26px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    /* Accent top bar */
+    .thesis-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 70%);
+    }
+
+    .thesis-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-3px);
+    }
+
+    .thesis-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--text-0);
+      margin-bottom: 10px;
+    }
+
+    .thesis-card p {
+      font-size: 0.92rem;
+      color: var(--text-1);
+      line-height: 1.75;
+    }
+
+    /* ================================================================
+       FEATURES (How It Works)
+    ================================================================ */
+    .feature {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 52px;
+      align-items: center;
+      margin-bottom: 72px;
+    }
+    .feature:last-child { margin-bottom: 0; }
+
+    .feature-img-wrap { position: relative; }
+
+    .feature-img-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: -18px;
+      left: 6%; right: 6%;
+      height: 60px;
+      background: radial-gradient(ellipse, rgba(61,219,110,0.22) 0%, transparent 70%);
+      filter: blur(14px);
+      z-index: -1;
+    }
+
+    .feature-img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      display: block;
+    }
+
+    .feature-text h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: var(--text-0);
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .feature-text p {
+      color: var(--text-1);
+      font-size: 0.975rem;
+      line-height: 1.82;
+    }
+
+    /* ================================================================
+       FOR TEACHERS
+    ================================================================ */
+    .for-teachers-bg { background: var(--bg-1); }
+
+    .prompts-list { list-style: none; }
+
+    .prompts-list li {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 22px;
+      align-items: start;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .prompts-list li:first-child { border-top: 1px solid var(--border); }
+
+    .prompt-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
       margin-top: 2px;
     }
 
-    /* CTA */
-    .cta {
-      text-align: center;
-      padding: 64px 24px;
-      background: #f7faf8;
-    }
-    .cta p {
-      font-size: 1.1rem;
-      color: #444;
-      margin-bottom: 24px;
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
+    .prompt-text {
+      font-size: 0.975rem;
+      color: var(--text-1);
+      line-height: 1.75;
     }
 
-    /* Feedback */
+    .prompt-text strong {
+      color: var(--text-0);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    /* ================================================================
+       CTA BAND
+    ================================================================ */
+    .cta-band {
+      background: linear-gradient(140deg, #091910 0%, #0C2016 45%, #071209 100%);
+      border-top: 1px solid var(--border-strong);
+      border-bottom: 1px solid var(--border-strong);
+      text-align: center;
+      padding: 100px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle glow inside CTA */
+    .cta-band::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(61,219,110,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .cta-band h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+      font-weight: 400;
+      color: var(--text-0);
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .cta-band p {
+      font-size: 1.1rem;
+      color: var(--text-1);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.75;
+      position: relative;
+    }
+
+    /* ================================================================
+       FEEDBACK
+    ================================================================ */
     .feedback-section {
       text-align: center;
-      padding: 64px 24px;
-      background: #fff;
-      border-top: 2px solid #2D8C4E;
+      padding: 100px 28px;
     }
-    .feedback-section h2 { margin-bottom: 16px; }
+
+    .feedback-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+      font-weight: 400;
+      color: var(--text-0);
+      margin-bottom: 16px;
+    }
+
     .feedback-section p {
-      font-size: 1.1rem;
-      color: #444;
-      margin-bottom: 24px;
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
+      font-size: 1rem;
+      color: var(--text-1);
+      max-width: 500px;
+      margin: 0 auto 34px;
+      line-height: 1.75;
     }
 
-    /* Footer */
-    footer {
-      text-align: center;
-      padding: 32px 24px;
-      color: #888;
-      font-size: 0.85rem;
-      border-top: 1px solid #eee;
-    }
-
-    /* URL copy box */
+    /* URL copy box -- dark theme */
     .url-copy-box {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: #f4f4f4;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px 14px;
-      max-width: 480px;
-      margin: 0 auto 24px;
+      gap: 12px;
+      background: var(--bg-1);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 12px 16px;
+      max-width: 500px;
+      margin: 0 auto 28px;
     }
+
     .url-copy-box .url-text {
       flex: 1;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 0.875rem;
-      color: #2D8C4E;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
       word-break: break-all;
       text-align: left;
     }
+
     .copy-btn {
-      background: #2D8C4E;
-      color: #fff;
+      background: var(--accent);
+      color: #060D09;
       border: none;
       border-radius: 6px;
-      padding: 6px 14px;
-      font-size: 0.8rem;
+      padding: 7px 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.75rem;
       font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.15s;
       flex-shrink: 0;
     }
-    .copy-btn:hover { background: #246b3d; }
-    .copy-btn.copied { background: #555; }
+    .copy-btn:hover { background: #5AEA86; }
+    .copy-btn.copied { background: var(--text-2); color: var(--text-0); }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .hero h1 { font-size: 2rem; }
-      .hero .subtitle { font-size: 1rem; }
+    /* ================================================================
+       FOOTER
+    ================================================================ */
+    footer {
+      text-align: center;
+      padding: 36px 28px;
+      color: var(--text-2);
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ================================================================
+       ANIMATIONS
+    ================================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    /* Scroll-reveal classes */
+    .reveal {
+      opacity: 0;
+      transform: translateY(34px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ================================================================
+       RESPONSIVE
+    ================================================================ */
+    @media (max-width: 720px) {
+      nav { padding: 14px 20px; }
+      .nav-logo span { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .hero h1 { font-size: clamp(3rem, 14vw, 4.5rem); }
       .thesis-grid { grid-template-columns: 1fr; }
-      .feature { flex-direction: column; }
-      .feature-img { width: 100%; min-width: 0; }
-      .prompts-list li { gap: 12px; }
+      .feature { grid-template-columns: 1fr; gap: 28px; }
+      .section-num { font-size: 5.5rem; }
+      .prompts-list li { grid-template-columns: 36px 1fr; gap: 14px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">Fortune Valley <span>/ Financial Literacy Game</span></a>
+    <a href="play.html" class="nav-cta">Play Now</a>
+  </nav>
+
   <!-- Hero -->
   <header class="hero">
-    <div class="container">
-      <h1>Fortune Valley</h1>
+    <div class="hero-orb"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Interactive Financial Education</div>
+      <h1>Fortune<em>Valley</em></h1>
       <p class="subtitle">A game that teaches high school students personal finance by making them use it to win.</p>
-      <p class="thesis-anchor">"The best way to learn compound interest is to need it to win."</p>
-      <img src="images/hero-title.jpg" alt="Fortune Valley title screen" class="hero-img">
-      <br>
-      <a href="play.html" class="btn">Play Now</a>
+      <p class="quote">"The best way to learn compound interest is to need it to win."</p>
+      <div class="hero-img-wrap">
+        <img src="images/hero-title.jpg" alt="Fortune Valley title screen" class="hero-img">
+      </div>
+      <div class="hero-cta">
+        <a href="play.html" class="btn-primary">Play Now</a>
+      </div>
     </div>
   </header>
 
   <!-- Why Game-Based Learning? -->
   <section>
     <div class="container">
-      <h2>Why Game-Based Learning?</h2>
-      <p class="section-lead">
-        Fortune Valley puts students in a situation where financial knowledge is required to progress. Not tested after the fact, but applied in the moment. That's the core thesis: learning happens when the stakes are real, even in a game. Only 57% of U.S. adults are financially literate, and worksheets and lectures consistently fail to reach the students who need this knowledge most. The problem is not the content. It's the delivery.
-      </p>
+      <div class="section-header reveal">
+        <span class="section-num">01</span>
+        <span class="section-label">The Case for Games</span>
+        <h2>Why Game-Based Learning?</h2>
+        <p class="section-lead">
+          Fortune Valley puts students in a situation where financial knowledge is required to progress. Not tested after the fact, but applied in the moment. That's the core thesis: learning happens when the stakes are real, even in a game.
+        </p>
+      </div>
       <div class="thesis-grid">
-        <div class="thesis-card">
+        <div class="thesis-card reveal reveal-delay-1">
           <h3>Intrinsic Motivation</h3>
           <p>Games create a reason to care. Students don't learn compound interest because it's on the test. They learn it because they need it to beat their rival and win the city. The motivation to win drives the motivation to learn.</p>
         </div>
-        <div class="thesis-card">
+        <div class="thesis-card reveal reveal-delay-2">
           <h3>Opportunity Cost</h3>
           <p>Students face the trade-off in real time, not on a worksheet. Every dollar spent on a property is a dollar not invested. They discover through play that the decision to buy now versus wait has real consequences.</p>
         </div>
-        <div class="thesis-card">
+        <div class="thesis-card reveal reveal-delay-3">
           <h3>Compound Interest</h3>
           <p>Students watch their investments grow and feel the cost of waiting. They see the difference between investing on Day 1 versus Day 10, and they feel it in their balance.</p>
         </div>
-        <div class="thesis-card">
+        <div class="thesis-card reveal reveal-delay-4">
           <h3>Risk vs. Reward</h3>
-          <p>Students lose money they actually needed, which makes the lesson stick. Stocks can spike or crash; bonds are safe but slow. They learn to diversify not from a definition, but from experience.</p>
+          <p>Students lose money they actually needed, which makes the lesson stick. High-risk stocks can spike or crash while low-risk stocks grow steadily. They learn the trade-off between safety and growth not from a definition, but from experience.</p>
         </div>
       </div>
     </div>
@@ -308,21 +677,29 @@
   <!-- How It Works -->
   <section>
     <div class="container">
-      <h2>How It Works</h2>
-      <p class="section-lead">
-        Students run a restaurant in a growing city, competing against an AI rival to acquire properties. The catch: the only way to earn enough money is to make smart financial decisions.
-      </p>
+      <div class="section-header reveal">
+        <span class="section-num">02</span>
+        <span class="section-label">Gameplay</span>
+        <h2>How It Works</h2>
+        <p class="section-lead">
+          Students run a restaurant in a growing city, competing against a rival to acquire properties. The catch: the only way to earn enough money is to make smart financial decisions.
+        </p>
+      </div>
 
-      <div class="feature">
-        <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
+      <div class="feature reveal">
+        <div class="feature-img-wrap">
+          <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
+        </div>
         <div class="feature-text">
           <h3>Manage Your Money in Real Time</h3>
           <p>The HUD shows your balance, your rival's progress, and the ticking clock. Students navigate between their portfolio, available lots, and investment options, making decisions under pressure that mirror real financial trade-offs. They discover that timing matters not from a textbook, but by watching their rival pull ahead.</p>
         </div>
       </div>
 
-      <div class="feature">
-        <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view" class="feature-img">
+      <div class="feature reveal">
+        <div class="feature-img-wrap">
+          <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view" class="feature-img">
+        </div>
         <div class="feature-text">
           <h3>Build Your City, Beat Your Rival</h3>
           <p>The isometric city is the scoreboard. Every property you buy lights up on the map. But your rival is buying too, and they don't wait. Students learn by doing that patience and strategy matter more than speed.</p>
@@ -332,45 +709,77 @@
   </section>
 
   <!-- For Teachers -->
-  <section class="for-teachers">
+  <section class="for-teachers-bg">
     <div class="container">
-      <h2>For Teachers</h2>
-      <p class="section-lead">
-        These questions are designed to be used before or after a play session. They help students connect what happened in the game to the financial concepts behind their decisions.
-      </p>
+      <div class="section-header reveal">
+        <span class="section-num">03</span>
+        <span class="section-label">Classroom Integration</span>
+        <h2>For Teachers</h2>
+        <p class="section-lead">
+          These questions are designed to be used before or after a play session. They help students connect what happened in the game to the financial concepts behind their decisions.
+        </p>
+      </div>
       <ol class="prompts-list">
-        <li><strong>At any point did you feel torn between buying a property right away and holding back to invest?</strong> What did you decide, and what happened next?</li>
-        <li><strong>Did you notice your balance growing faster at some points than others?</strong> What do you think caused that difference?</li>
-        <li><strong>Which investments felt safest? Which felt riskiest?</strong> How did you decide when to take the bigger risk?</li>
-        <li><strong>When your rival started buying properties faster, did it change how you managed your money?</strong> What did you do differently?</li>
-        <li><strong>If you played again, would you approach the first few minutes differently?</strong> What would you change and why?</li>
+        <li class="reveal reveal-delay-1">
+          <div class="prompt-num">01</div>
+          <div class="prompt-text">
+            <strong>At any point did you feel torn between buying a property right away and holding back to invest?</strong>
+            What did you decide, and what happened next?
+          </div>
+        </li>
+        <li class="reveal reveal-delay-2">
+          <div class="prompt-num">02</div>
+          <div class="prompt-text">
+            <strong>Did you notice your balance growing faster at some points than others?</strong>
+            What do you think caused that difference?
+          </div>
+        </li>
+        <li class="reveal reveal-delay-3">
+          <div class="prompt-num">03</div>
+          <div class="prompt-text">
+            <strong>Which investments felt safest? Which felt riskiest?</strong>
+            How did you decide when to take the bigger risk?
+          </div>
+        </li>
+        <li class="reveal reveal-delay-4">
+          <div class="prompt-num">04</div>
+          <div class="prompt-text">
+            <strong>When your rival started buying properties faster, did it change how you managed your money?</strong>
+            What did you do differently?
+          </div>
+        </li>
+        <li class="reveal">
+          <div class="prompt-num">05</div>
+          <div class="prompt-text">
+            <strong>If you played again, would you approach the first few minutes differently?</strong>
+            What would you change and why?
+          </div>
+        </li>
       </ol>
     </div>
   </section>
 
-  <!-- Next Steps -->
-  <section class="cta">
-    <div class="container">
-      <h2>Let's Test This With Students</h2>
-      <p>
-        If we're aligned on the value of game-based financial education, the next step is simple: put Fortune Valley in front of real students and measure what they learn.
-      </p>
-      <a href="play.html" class="btn btn-green">Try the Game</a>
-    </div>
-  </section>
+  <!-- Next Steps / CTA -->
+  <div class="cta-band">
+    <h2 class="reveal">Let's Test This With Students</h2>
+    <p class="reveal">
+      If we're aligned on the value of game-based financial education, the next step is simple: put Fortune Valley in front of real students and measure what they learn.
+    </p>
+    <a href="play.html" class="btn-primary reveal">Try the Game</a>
+  </div>
 
   <!-- Share Your Feedback -->
   <section class="feedback-section">
     <div class="container">
-      <h2>Share Your Feedback</h2>
-      <p>
+      <h2 class="reveal">Share Your Feedback</h2>
+      <p class="reveal">
         Whether you're a student who just played or a teacher running this in your classroom, we want to hear from you. Your feedback directly shapes the next version of Fortune Valley.
       </p>
-      <div class="url-copy-box">
+      <div class="url-copy-box reveal">
         <span class="url-text">https://forms.gle/1P1XHz9RLFKFiAYJ6</span>
         <button class="copy-btn" onclick="copyFeedbackUrl(this)">Copy</button>
       </div>
-      <a href="https://forms.gle/1P1XHz9RLFKFiAYJ6" class="btn btn-green" target="_blank" rel="noopener">Submit Feedback</a>
+      <a href="https://forms.gle/1P1XHz9RLFKFiAYJ6" class="btn-outline reveal" target="_blank" rel="noopener">Submit Feedback</a>
     </div>
   </section>
 
@@ -381,18 +790,30 @@
     </div>
   </footer>
 
+  <script>
+    function copyFeedbackUrl(btn) {
+      navigator.clipboard.writeText('https://forms.gle/1P1XHz9RLFKFiAYJ6').then(function() {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function() {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
 
-<script>
-  function copyFeedbackUrl(btn) {
-    navigator.clipboard.writeText('https://forms.gle/1P1XHz9RLFKFiAYJ6').then(function() {
-      btn.textContent = 'Copied!';
-      btn.classList.add('copied');
-      setTimeout(function() {
-        btn.textContent = 'Copy';
-        btn.classList.remove('copied');
-      }, 2000);
-    });
-  }
-</script>
+    // Scroll reveal
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    revealEls.forEach(function(el) { observer.observe(el); });
+  </script>
+
 </body>
 </html>
