@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fortune Valley — Learn Personal Finance Through Play</title>
+  <title>Fortune Valley: Learn Personal Finance Through Play</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -32,8 +32,17 @@
     .hero .subtitle {
       font-size: 1.25rem;
       opacity: 0.9;
-      margin-bottom: 32px;
+      margin-bottom: 12px;
       max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero .thesis-anchor {
+      font-size: 1rem;
+      opacity: 0.8;
+      font-style: italic;
+      margin-bottom: 32px;
+      max-width: 480px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -130,6 +139,42 @@
       font-size: 0.95rem;
     }
 
+    /* For Teachers */
+    .for-teachers {
+      background: #fff;
+    }
+    .prompts-list {
+      list-style: none;
+      counter-reset: prompt-counter;
+      margin-top: 8px;
+    }
+    .prompts-list li {
+      counter-increment: prompt-counter;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+      color: #444;
+    }
+    .prompts-list li:last-child { border-bottom: none; }
+    .prompts-list li::before {
+      content: counter(prompt-counter);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      background: #2D8C4E;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
     /* CTA */
     .cta {
       text-align: center;
@@ -137,6 +182,23 @@
       background: #f7faf8;
     }
     .cta p {
+      font-size: 1.1rem;
+      color: #444;
+      margin-bottom: 24px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Feedback */
+    .feedback-section {
+      text-align: center;
+      padding: 64px 24px;
+      background: #fff;
+      border-top: 2px solid #2D8C4E;
+    }
+    .feedback-section h2 { margin-bottom: 16px; }
+    .feedback-section p {
       font-size: 1.1rem;
       color: #444;
       margin-bottom: 24px;
@@ -154,6 +216,42 @@
       border-top: 1px solid #eee;
     }
 
+    /* URL copy box */
+    .url-copy-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 14px;
+      max-width: 480px;
+      margin: 0 auto 24px;
+    }
+    .url-copy-box .url-text {
+      flex: 1;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.875rem;
+      color: #2D8C4E;
+      word-break: break-all;
+      text-align: left;
+    }
+    .copy-btn {
+      background: #2D8C4E;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: #246b3d; }
+    .copy-btn.copied { background: #555; }
+
     /* Responsive */
     @media (max-width: 640px) {
       .hero h1 { font-size: 2rem; }
@@ -161,6 +259,7 @@
       .thesis-grid { grid-template-columns: 1fr; }
       .feature { flex-direction: column; }
       .feature-img { width: 100%; min-width: 0; }
+      .prompts-list li { gap: 12px; }
     }
   </style>
 </head>
@@ -170,7 +269,8 @@
   <header class="hero">
     <div class="container">
       <h1>Fortune Valley</h1>
-      <p class="subtitle">A game that teaches high school students personal finance — by making them use it to win.</p>
+      <p class="subtitle">A game that teaches high school students personal finance by making them use it to win.</p>
+      <p class="thesis-anchor">"The best way to learn compound interest is to need it to win."</p>
       <img src="images/hero-title.jpg" alt="Fortune Valley title screen" class="hero-img">
       <br>
       <a href="play.html" class="btn">Play Now</a>
@@ -182,24 +282,24 @@
     <div class="container">
       <h2>Why Game-Based Learning?</h2>
       <p class="section-lead">
-        Only 57% of U.S. adults are financially literate, yet traditional classroom methods — worksheets, lectures, textbook chapters — consistently fail to engage the students who need this knowledge most. The problem isn't the content. It's the delivery.
+        Fortune Valley puts students in a situation where financial knowledge is required to progress. Not tested after the fact, but applied in the moment. That's the core thesis: learning happens when the stakes are real, even in a game. Only 57% of U.S. adults are financially literate, and worksheets and lectures consistently fail to reach the students who need this knowledge most. The problem is not the content. It's the delivery.
       </p>
       <div class="thesis-grid">
         <div class="thesis-card">
           <h3>Intrinsic Motivation</h3>
-          <p>Games create a reason to care. Students don't learn compound interest because it's on the test — they learn it because they need it to beat their rival and win the city.</p>
+          <p>Games create a reason to care. Students don't learn compound interest because it's on the test. They learn it because they need it to beat their rival and win the city. The motivation to win drives the motivation to learn.</p>
         </div>
         <div class="thesis-card">
           <h3>Opportunity Cost</h3>
-          <p>Every dollar spent on a property is a dollar not invested. The game makes this trade-off visceral: buy now and fall behind, or invest and overtake.</p>
+          <p>Students face the trade-off in real time, not on a worksheet. Every dollar spent on a property is a dollar not invested. They discover through play that the decision to buy now versus wait has real consequences.</p>
         </div>
         <div class="thesis-card">
           <h3>Compound Interest</h3>
-          <p>Students watch their investments grow in real time. They see the difference between investing on Day 1 versus Day 10 — and they feel it in their balance.</p>
+          <p>Students watch their investments grow and feel the cost of waiting. They see the difference between investing on Day 1 versus Day 10, and they feel it in their balance.</p>
         </div>
         <div class="thesis-card">
           <h3>Risk vs. Reward</h3>
-          <p>Stocks can spike or crash. Bonds are safe but slow. Students learn to diversify not from a definition, but from losing money they needed.</p>
+          <p>Students lose money they actually needed, which makes the lesson stick. Stocks can spike or crash; bonds are safe but slow. They learn to diversify not from a definition, but from experience.</p>
         </div>
       </div>
     </div>
@@ -217,7 +317,7 @@
         <img src="images/gameplay-hud.jpg" alt="Fortune Valley gameplay showing HUD and city" class="feature-img">
         <div class="feature-text">
           <h3>Manage Your Money in Real Time</h3>
-          <p>The HUD shows your balance, your rival's progress, and the ticking clock. Students navigate between their portfolio, available lots, and investment options — making decisions under pressure that mirror real financial trade-offs.</p>
+          <p>The HUD shows your balance, your rival's progress, and the ticking clock. Students navigate between their portfolio, available lots, and investment options, making decisions under pressure that mirror real financial trade-offs. They discover that timing matters not from a textbook, but by watching their rival pull ahead.</p>
         </div>
       </div>
 
@@ -225,9 +325,26 @@
         <img src="images/city-overview.jpg" alt="Fortune Valley isometric city view" class="feature-img">
         <div class="feature-text">
           <h3>Build Your City, Beat Your Rival</h3>
-          <p>The isometric city is the scoreboard. Every property you buy lights up on the map. But your rival is buying too — and they don't wait. Students learn that timing, patience, and strategy matter more than speed.</p>
+          <p>The isometric city is the scoreboard. Every property you buy lights up on the map. But your rival is buying too, and they don't wait. Students learn by doing that patience and strategy matter more than speed.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- For Teachers -->
+  <section class="for-teachers">
+    <div class="container">
+      <h2>For Teachers</h2>
+      <p class="section-lead">
+        These questions are designed to be used before or after a play session. They help students connect what happened in the game to the financial concepts behind their decisions.
+      </p>
+      <ol class="prompts-list">
+        <li><strong>At any point did you feel torn between buying a property right away and holding back to invest?</strong> What did you decide, and what happened next?</li>
+        <li><strong>Did you notice your balance growing faster at some points than others?</strong> What do you think caused that difference?</li>
+        <li><strong>Which investments felt safest? Which felt riskiest?</strong> How did you decide when to take the bigger risk?</li>
+        <li><strong>When your rival started buying properties faster, did it change how you managed your money?</strong> What did you do differently?</li>
+        <li><strong>If you played again, would you approach the first few minutes differently?</strong> What would you change and why?</li>
+      </ol>
     </div>
   </section>
 
@@ -242,12 +359,40 @@
     </div>
   </section>
 
+  <!-- Share Your Feedback -->
+  <section class="feedback-section">
+    <div class="container">
+      <h2>Share Your Feedback</h2>
+      <p>
+        Whether you're a student who just played or a teacher running this in your classroom, we want to hear from you. Your feedback directly shapes the next version of Fortune Valley.
+      </p>
+      <div class="url-copy-box">
+        <span class="url-text">https://forms.gle/1P1XHz9RLFKFiAYJ6</span>
+        <button class="copy-btn" onclick="copyFeedbackUrl(this)">Copy</button>
+      </div>
+      <a href="https://forms.gle/1P1XHz9RLFKFiAYJ6" class="btn btn-green" target="_blank" rel="noopener">Submit Feedback</a>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
     <div class="container">
-      Fortune Valley &mdash; A proof of concept for game-based financial literacy education.
+      Fortune Valley: A proof of concept for game-based financial literacy education.
     </div>
   </footer>
 
+
+<script>
+  function copyFeedbackUrl(btn) {
+    navigator.clipboard.writeText('https://forms.gle/1P1XHz9RLFKFiAYJ6').then(function() {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
 </body>
 </html>

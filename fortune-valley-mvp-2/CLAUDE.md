@@ -102,6 +102,7 @@ The player should be able to verbally explain:
   - Include short comments explaining intent
   - Avoid clever or dense implementations
 - When unsure, propose options with trade-offs
+- Never use em dashes in any output, comments, copy, or documentation
 
 ---
 
