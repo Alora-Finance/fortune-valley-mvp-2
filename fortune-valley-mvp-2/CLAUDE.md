@@ -77,6 +77,78 @@ The player should be able to verbally explain:
 - Keep systems loosely coupled and testable
 - Code must be readable by a junior Unity developer
 
+### 4.1 Layer Structure (Required)
+All new code must be assigned to one of these layers:
+
+| Layer | Namespace | Folder Path | Rule |
+|-------|-----------|-------------|------|
+| Enums | `FortuneValley.Domain.Enums` | `Assets/Scripts/Domain/Enums/` | Pure C# enums only. No logic. |
+| Entities | `FortuneValley.Domain.Entities` | `Assets/Scripts/Domain/Entities/` | Pure C# classes. No UnityEngine imports. |
+| Managers | `FortuneValley.Managers` | `Assets/Scripts/Managers/` | MonoBehaviour orchestrators only. |
+| Systems | `FortuneValley.Core` | `Assets/Scripts/Core/` | MonoBehaviour game systems. |
+| UI | `FortuneValley.UI` | `Assets/Scripts/UI/` | UI components and panels. |
+
+> **Migration note:** `Assets/Scripts/V2.0/` is a legacy path. All domain files must live under `Assets/Scripts/Domain/`. The V2.0 folder must be fully migrated before any feature that references it is merged.
+
+### 4.2 One Type Per File
+- Every class, enum, or interface gets its own `.cs` file
+- File name must match the type name exactly
+- No bundling multiple types in one file (the existing GameState-inside-GameManager.cs pattern must not be repeated)
+
+### 4.3 Domain Layer Must Be Unity-Free
+- Files in `FortuneValley.Domain.*` must NOT import UnityEngine
+- No MonoBehaviour, no Mathf, no Debug, no Vector types
+- This ensures domain logic is unit-testable without booting Unity
+
+### 4.4 No Duplicate Types
+- Never leave two versions of the same class or enum coexisting
+- If migrating a type, remove the old one in the same PR/commit
+- Coexisting duplicates (e.g., two ActiveInvestment classes) are a hard block on merging
+
+### 4.5 Layer Dependency Rules
+Layers may only import from layers below them. No upward or circular imports. Ever.
+
+```
+UI            --> Core, Domain
+Managers      --> Core, Domain
+Core          --> Domain
+Domain        --> (nothing)
+```
+
+- Domain is the foundation. It imports nothing.
+- Core may use Domain types but not Managers or UI.
+- Managers may use Core and Domain but not UI.
+- UI may use Core and Domain. UI must NOT call into Managers directly -- use events.
+- If you need to cross a boundary that this table forbids, the answer is an event, not an import.
+
+### 4.6 Naming Conventions
+Consistent naming is required so any developer can navigate the project without a guide.
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Classes | PascalCase | `ActiveInvestment` |
+| Enums | PascalCase | `GameState` |
+| Enum values | PascalCase | `GameState.Playing` |
+| Interfaces | `I` prefix + PascalCase | `IInvestmentProvider` |
+| Private fields | `_camelCase` | `_currentBalance` |
+| Events / Actions | `On` prefix + PascalCase | `OnBalanceChanged` |
+| ScriptableObjects | Descriptive + `Config` or `Data` suffix | `RestaurantConfig`, `StockData` |
+| Files | Must match the type name exactly | `ActiveInvestment.cs` |
+
+### 4.7 Assembly Definitions (Required for Scalability)
+Each layer must have its own `.asmdef` file. This turns the dependency rules in 4.5 from
+a convention into a compile-time hard error.
+
+| Layer | Assembly Name | File Location |
+|-------|---------------|---------------|
+| Domain | `FortuneValley.Domain` | `Assets/Scripts/Domain/` |
+| Core | `FortuneValley.Core` | `Assets/Scripts/Core/` |
+| Managers | `FortuneValley.Managers` | `Assets/Scripts/Managers/` |
+| UI | `FortuneValley.UI` | `Assets/Scripts/UI/` |
+
+Without `.asmdef` files: dependency rules are enforced by code review (easy to miss).
+With `.asmdef` files: a forbidden import is a compile error (impossible to ship).
+
 ---
 
 ## 5. Unity-Specific Rules

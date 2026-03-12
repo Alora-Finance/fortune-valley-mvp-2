@@ -26,14 +26,17 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         [Header("Upgrades")]
-        [Tooltip("Maximum upgrade level")]
-        [SerializeField] private int _maxLevel = 5;
+        [Tooltip("Maximum upgrade level (3 tiers: Food Cart, Bistro, Fortune Grill)")]
+        [SerializeField] private int _maxLevel = 3;
+
+        [Tooltip("Display name for each tier (index 0 = level 1)")]
+        [SerializeField] private string[] _tierNames = { "Level 1", "Level 2", "Level 3" };
 
         [Tooltip("Cost to upgrade to each level (index 0 = cost to reach level 2)")]
-        [SerializeField] private float[] _upgradeCosts = { 500f, 1500f, 4000f, 10000f };
+        [SerializeField] private float[] _upgradeCosts = { 500f, 1500f };
 
         [Tooltip("Income multiplier at each level (index 0 = level 1)")]
-        [SerializeField] private float[] _incomeMultipliers = { 1f, 1.5f, 2.25f, 3.5f, 5f };
+        [SerializeField] private float[] _incomeMultipliers = { 1f, 2.5f, 5f };
 
         // ═══════════════════════════════════════════════════════════════
         // PUBLIC ACCESSORS
@@ -41,6 +44,15 @@ namespace FortuneValley.Core
 
         public float BaseIncomePerTick => _baseIncomePerTick;
         public int MaxLevel => _maxLevel;
+
+        /// <summary>
+        /// Get the display name for a given level (e.g., "Bistro" for level 2).
+        /// </summary>
+        public string GetTierName(int level)
+        {
+            int index = Mathf.Clamp(level - 1, 0, _tierNames.Length - 1);
+            return _tierNames != null && _tierNames.Length > 0 ? _tierNames[index] : $"Level {level}";
+        }
 
         /// <summary>
         /// Get the income per tick for a given level.
@@ -91,10 +103,11 @@ namespace FortuneValley.Core
             // Calculate payback period
             int ticksToPayback = Mathf.CeilToInt(upgradeCost / incomeGain);
 
-            return $"Upgrade cost: ${upgradeCost:F0}\n" +
-                   $"Income increase: ${currentIncome:F0} → ${nextIncome:F0} per day\n" +
+            string nextTierName = GetTierName(currentLevel + 1);
+            return $"Upgrade to {nextTierName}: ${upgradeCost:F0}\n" +
+                   $"Income increase: ${currentIncome:F0} to ${nextIncome:F0} per day\n" +
                    $"Payback period: ~{ticksToPayback} days\n" +
-                   $"After payback, you'll earn ${incomeGain:F0} extra every day forever!";
+                   $"After payback, you'll earn ${incomeGain:F0} extra every day!";
         }
     }
 }

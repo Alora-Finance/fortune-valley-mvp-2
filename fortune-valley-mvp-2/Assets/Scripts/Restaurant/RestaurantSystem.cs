@@ -74,6 +74,16 @@ namespace FortuneValley.Core
         /// </summary>
         public float UpgradeCost => _config.GetUpgradeCost(_currentLevel);
 
+        /// <summary>
+        /// Display name for the current tier (e.g., "Bistro").
+        /// </summary>
+        public string TierDisplayName => _config.GetTierName(_currentLevel);
+
+        /// <summary>
+        /// True when the restaurant cannot be upgraded further.
+        /// </summary>
+        public bool IsMaxTier => !CanUpgrade;
+
         // ═══════════════════════════════════════════════════════════════
         // LIFECYCLE
         // ═══════════════════════════════════════════════════════════════

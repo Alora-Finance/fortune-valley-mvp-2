@@ -150,6 +150,11 @@ namespace FortuneValley.Core
         // ═══════════════════════════════════════════════════════════════
 
         /// <summary>
+        /// Fired when the player clicks the restaurant building in the world.
+        /// </summary>
+        public static event Action OnRestaurantSelected;
+
+        /// <summary>
         /// Fired when restaurant is upgraded.
         /// Parameter: new level
         /// </summary>
@@ -179,6 +184,7 @@ namespace FortuneValley.Core
         public static void RaiseGameEnd(Owner winner) => OnGameEnd?.Invoke(winner);
         public static void RaiseGameEndWithSummary(bool isPlayerWin, GameSummary summary) => OnGameEndWithSummary?.Invoke(isPlayerWin, summary);
         public static void RaiseGameStart() => OnGameStart?.Invoke();
+        public static void RaiseRestaurantSelected() => OnRestaurantSelected?.Invoke();
         public static void RaiseRestaurantUpgraded(int level) => OnRestaurantUpgraded?.Invoke(level);
 
         // ═══════════════════════════════════════════════════════════════
@@ -210,6 +216,7 @@ namespace FortuneValley.Core
             OnGameEnd = null;
             OnGameEndWithSummary = null;
             OnGameStart = null;
+            OnRestaurantSelected = null;
             OnRestaurantUpgraded = null;
         }
     }
